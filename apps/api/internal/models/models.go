@@ -56,6 +56,7 @@ type Release struct {
 	Region      string     `gorm:"size:50" json:"region"`
 	ReleaseDate *time.Time `json:"release_date"`
 	Edition     string     `gorm:"size:100" json:"edition"`
+	Barcode     string     `gorm:"size:50;index" json:"barcode,omitempty"`
 	Physical    bool       `gorm:"default:true" json:"physical"`
 	Official    bool       `gorm:"default:true" json:"official"`
 	CreatedAt   time.Time  `json:"created_at"`
