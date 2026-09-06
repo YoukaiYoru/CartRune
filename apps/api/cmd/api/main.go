@@ -105,7 +105,7 @@ func main() {
 	} else if err := vectorSvc.EnsureCollection(context.Background(), vector.DefaultDims); err != nil {
 		log.Printf("WARN: Qdrant collection setup failed: %v", err)
 	}
-	scannerService := scanner.NewService(gamesRepo)
+	scannerService := scanner.NewService(gamesRepo, vectorSvc)
 	scannerHandler := scanner.NewHandler(scannerService)
 	scanner.Routes(api, scannerHandler, cfg.JWTSecret)
 

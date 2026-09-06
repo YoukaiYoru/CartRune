@@ -1,17 +1,22 @@
 package scanner
 
 import (
+	"context"
+	"errors"
+
 	"github.com/YoukaiYoru/api/internal/games"
 	"github.com/YoukaiYoru/api/internal/media"
 	"github.com/YoukaiYoru/api/internal/models"
+	"github.com/YoukaiYoru/api/internal/vector"
 )
 
 type Service struct {
-	gameRepo *games.Repository
+	gameRepo  *games.Repository
+	vectorSvc *vector.Service
 }
 
-func NewService(gameRepo *games.Repository) *Service {
-	return &Service{gameRepo: gameRepo}
+func NewService(gameRepo *games.Repository, vectorSvc *vector.Service) *Service {
+	return &Service{gameRepo: gameRepo, vectorSvc: vectorSvc}
 }
 
 func coverURLFor(g models.Game) string {
@@ -81,14 +86,43 @@ func (s *Service) ScanText(text string, platformHint string) (*ScanResponse, err
 	}, nil
 }
 
+// scoreThreshold filters out weak cosine similarities so false positives from
+// unrelated covers are not surfaced to the user.
+var scoreThreshold float32 = 0.30
+
 func (s *Service) MatchEmbedding(embedding []float64, platformHint string) (*ScanResponse, error) {
-	// TODO: Integrate with Qdrant for vector similarity search
-	// For now, return empty matches
-	_ = embedding
-	_ = platformHint
+	if s.vectorSvc == nil {
+		return nil, errors.New("vector store unavailable")
+	}
+
+	vec := make([]float32, len(embedding))
+	for i, v := range embedding {
+		vec[i] = float32(v)
+	}
+
+	matches, err := s.vectorSvc.Search(context.Background(), vec, 10, scoreThreshold)
+	if err != nil {
+		if errors.Is(err, vector.ErrUnavailable) {
+			return nil, errors.New("vector store unavailable")
+		}
+		return nil, err
+	}
+
+	results := make([]MatchResult, 0, len(matches))
+	for _, m := range matches {
+		results = append(results, MatchResult{
+			GameID:     m.GameID,
+			ReleaseID:  m.ReleaseID,
+			Title:      m.Title,
+			Platform:   m.Platform,
+			Region:     m.Region,
+			CoverURL:   m.CoverURL,
+			Similarity: m.Similarity,
+		})
+	}
 
 	return &ScanResponse{
-		Matches: []MatchResult{},
+		Matches: results,
 		Method:  "embedding",
 	}, nil
 }
