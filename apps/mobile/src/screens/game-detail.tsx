@@ -4,29 +4,44 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '@/components/screen-header';
 import { ProgressBar } from '@/components/progress-bar';
+import { useGame } from '@/hooks/useGames';
+import { usePrimaryLibrary, useAddGameToLibrary } from '@/hooks/useCollections';
 import { theme } from '@/theme';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
-const MOCK_GAME = {
-  id: '1',
-  title: 'Resident Evil 4',
-  platform: 'PlayStation 2',
-  developer: 'Capcom',
-  publisher: 'Capcom',
-  release_date: '2005-01-11',
-  description: "Leon S. Kennedy is sent on a mission to rescue the U.S. President's daughter...",
-  avg_rating: 4.7,
-  reviews_count: 128,
-  progress: 75,
-  status: 'playing',
-};
-
 export function GameDetail({ id }: { id: string }) {
   const router = useRouter();
+  const { data: game, isLoading } = useGame(id);
+  const { library } = usePrimaryLibrary();
+  const addGame = useAddGameToLibrary(library?.id ?? '');
+
+  if (isLoading || !game) {
+    return (
+      <View style={styles.container}>
+        <ScreenHeader title="" showBack />
+        <ActivityIndicator color={theme.accent.primary} style={{ marginTop: 60 }} />
+      </View>
+    );
+  }
+
+  const primaryCover = game.covers.find((c) => c.primary) ?? game.covers[0];
+  const platformNames = game.platforms.map((p) => p.name).join(', ');
+  const libraryGame = library?.games.find((g) => g.game_id === game.id);
+  const alreadyAdded = !!libraryGame;
+  const releaseDate = game.release_date
+    ? new Date(game.release_date).toLocaleDateString()
+    : '';
+
+  const handleAdd = () => {
+    if (!library?.id) return;
+    addGame.mutate({ game_id: game.id });
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -34,36 +49,62 @@ export function GameDetail({ id }: { id: string }) {
 
       <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.coverWrap}>
         <View style={styles.cover}>
-          <Text style={styles.coverEmoji}>🎮</Text>
+          {primaryCover ? (
+            <Image source={{ uri: primaryCover.url }} style={styles.coverImage} resizeMode="cover" />
+          ) : (
+            <Text style={styles.coverEmoji}>🎮</Text>
+          )}
         </View>
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.info}>
-        <Text style={styles.title}>{MOCK_GAME.title}</Text>
-        <Text style={styles.platform}>{MOCK_GAME.platform}</Text>
+        <Text style={styles.title}>{game.title}</Text>
+        {platformNames ? <Text style={styles.platform}>{platformNames}</Text> : null}
 
         <View style={styles.ratingRow}>
-          <Text style={styles.rating}>★ {MOCK_GAME.avg_rating}</Text>
-          <Text style={styles.reviewsCount}>{MOCK_GAME.reviews_count} reviews</Text>
+          <Text style={styles.rating}>★ {game.avg_rating.toFixed(1)}</Text>
+          <Text style={styles.reviewsCount}>{game.reviews_count} reviews</Text>
         </View>
 
-        <Text style={styles.meta}>
-          {MOCK_GAME.developer} · {MOCK_GAME.publisher} · {MOCK_GAME.release_date}
-        </Text>
+        {releaseDate ? (
+          <Text style={styles.meta}>
+            {[game.developer, game.publisher, releaseDate].filter(Boolean).join(' · ')}
+          </Text>
+        ) : null}
 
-        <Text style={styles.description}>{MOCK_GAME.description}</Text>
+        {game.description ? (
+          <Text style={styles.description}>{game.description}</Text>
+        ) : null}
       </Animated.View>
 
       <Animated.View entering={FadeInRight.delay(300).springify()}>
-        <Pressable style={styles.addButton}>
-          <Text style={styles.addButtonText}>+ Add to Library</Text>
-        </Pressable>
+        {library?.id && (
+          <Pressable
+            style={[styles.addButton, alreadyAdded && styles.addButtonDisabled]}
+            onPress={handleAdd}
+            disabled={alreadyAdded || addGame.isPending}
+          >
+            <Text style={styles.addButtonText}>
+              {alreadyAdded
+                ? '✓ In Your Library'
+                : addGame.isPending
+                  ? 'Adding…'
+                  : '+ Add to Library'}
+            </Text>
+          </Pressable>
+        )}
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.progressSection}>
-        <Text style={styles.sectionTitle}>Your Progress</Text>
-        <ProgressBar progress={MOCK_GAME.progress} showLabel label={`${MOCK_GAME.progress}% · ${MOCK_GAME.status}`} />
-      </Animated.View>
+      {libraryGame && (
+        <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.progressSection}>
+          <Text style={styles.sectionTitle}>Your Progress</Text>
+          <ProgressBar
+            progress={libraryGame.progress}
+            showLabel
+            label={`${libraryGame.progress}% · ${libraryGame.status}`}
+          />
+        </Animated.View>
+      )}
 
       <Animated.View entering={FadeInDown.delay(500).springify()}>
         <Pressable
@@ -90,7 +131,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: theme.border.subtle,
+    overflow: 'hidden',
   },
+  coverImage: { width: '100%', height: '100%', backgroundColor: theme.bg.surface },
   coverEmoji: { fontSize: 56, opacity: 0.4 },
   info: { paddingHorizontal: 16 },
   title: { color: theme.text.primary, fontSize: 22, fontWeight: '700' },
@@ -108,6 +151,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
+  addButtonDisabled: { backgroundColor: theme.accent.muted },
   addButtonText: { color: theme.bg.deep, fontSize: 14, fontWeight: '700' },
   progressSection: { marginTop: 20, paddingHorizontal: 16 },
   sectionTitle: { color: theme.text.primary, fontSize: 16, fontWeight: '700' },
