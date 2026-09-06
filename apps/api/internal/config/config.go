@@ -31,6 +31,11 @@ type Config struct {
 	// media proxy (defaults: 60 requests per minute).
 	MediaRateLimit  int
 	MediaRateWindow time.Duration
+
+	// Qdrant vector store for visual matching (gRPC port 6334).
+	QdrantHost string
+	QdrantPort int
+	QdrantAPIKey string
 }
 
 func Load() *Config {
@@ -53,6 +58,10 @@ func Load() *Config {
 		MediaCacheDir:   getEnv("MEDIA_CACHE_DIR", "data/covers"),
 		MediaRateLimit:  getEnvInt("MEDIA_RATE_LIMIT", 60),
 		MediaRateWindow: getEnvDuration("MEDIA_RATE_WINDOW", time.Minute),
+
+		QdrantHost:    getEnv("QDRANT_HOST", "localhost"),
+		QdrantPort:    getEnvInt("QDRANT_PORT", 6334),
+		QdrantAPIKey:  getEnv("QDRANT_API_KEY", ""),
 	}
 }
 
