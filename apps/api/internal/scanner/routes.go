@@ -11,4 +11,5 @@ func Routes(app fiber.Router, handler *Handler, jwtSecret string) {
 	scanner.Post("/barcode", middleware.JWTAuth(jwtSecret), handler.Barcode)
 	scanner.Post("/text", middleware.JWTAuth(jwtSecret), handler.Text)
 	scanner.Post("/match", middleware.JWTAuth(jwtSecret), handler.Match)
+	scanner.Get("/stats", middleware.JWTAuth(jwtSecret), handler.Stats)
 }

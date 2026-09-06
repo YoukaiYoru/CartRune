@@ -49,6 +49,14 @@ func (h *Handler) Text(c fiber.Ctx) error {
 	return response.Success(c, scan)
 }
 
+func (h *Handler) Stats(c fiber.Ctx) error {
+	stats, err := h.service.Stats(c.Context())
+	if err != nil {
+		return response.Error(c, fiber.StatusServiceUnavailable, "vector store unavailable")
+	}
+	return response.Success(c, stats)
+}
+
 func (h *Handler) Match(c fiber.Ctx) error {
 	var req MatchRequest
 	if err := c.Bind().Body(&req); err != nil {

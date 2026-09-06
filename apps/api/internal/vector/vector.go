@@ -144,6 +144,31 @@ func (s *Service) Upsert(ctx context.Context, points []Point) error {
 	return nil
 }
 
+// Stats reports the index health for monitoring/metrics.
+type Stats struct {
+	Collection string `json:"collection"`
+	Indexed    uint64 `json:"indexed"`
+	Healthy    bool   `json:"healthy"`
+}
+
+// Stats returns how many cover embeddings are currently indexed.
+func (s *Service) Stats(ctx context.Context) (Stats, error) {
+	if s.client == nil {
+		return Stats{Collection: CollectionName, Healthy: false}, ErrUnavailable
+	}
+	n, err := s.client.Count(ctx, &qdrant.CountPoints{
+		CollectionName: CollectionName,
+	})
+	if err != nil {
+		return Stats{Collection: CollectionName, Healthy: false}, err
+	}
+	return Stats{
+		Collection: CollectionName,
+		Indexed:    n,
+		Healthy:    true,
+	}, nil
+}
+
 // Search returns the nearest cover embeddings to the given vector.
 func (s *Service) Search(ctx context.Context, vector []float32, limit int, scoreThreshold float32) ([]Match, error) {
 	if s.client == nil {

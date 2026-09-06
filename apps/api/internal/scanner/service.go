@@ -127,6 +127,14 @@ func (s *Service) MatchEmbedding(embedding []float64, platformHint string) (*Sca
 	}, nil
 }
 
+// Stats delegates to the vector store for index metrics.
+func (s *Service) Stats(ctx context.Context) (vector.Stats, error) {
+	if s.vectorSvc == nil {
+		return vector.Stats{}, errors.New("vector store unavailable")
+	}
+	return s.vectorSvc.Stats(ctx)
+}
+
 // GetGame returns a game for internal use
 func (s *Service) GetGame(id string) (*models.Game, error) {
 	// Not used directly, but available for future needs
