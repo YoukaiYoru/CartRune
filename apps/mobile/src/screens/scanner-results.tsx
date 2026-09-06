@@ -5,12 +5,18 @@ import {
   FlatList,
   Pressable,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { scanBarcode, scanText } from '@/services/scanner';
 import { Image } from 'expo-image';
 import { MatchCard } from '@/components/match-card';
+import {
+  useScreenScraperSearch,
+  useImportScreenScraperGame,
+} from '@/hooks/useScreenscraper';
 import { ScreenHeader } from '@/components/screen-header';
 import { theme } from '@/theme';
 
@@ -21,6 +27,7 @@ const methodLabel: Record<string, string> = {
 };
 
 export function ScannerResults() {
+  const [isImportMode, setIsImportMode] = useState(false);
   const { method, value, photo } = useLocalSearchParams<{
     method: string;
     value?: string;
@@ -92,14 +99,17 @@ export function ScannerResults() {
       );
     }
 
-    if (results.length === 0) {
+    if (results.length === 0 && !isImportMode) {
       return (
         <View style={styles.stateWrap}>
           <Text style={styles.stateIcon}>🔍</Text>
-          <Text style={styles.stateTitle}>No matches found</Text>
+          <Text style={styles.stateTitle}>No local matches</Text>
           <Text style={styles.stateText}>
-            Nothing in your catalog matches this {methodKey === 'barcode' ? 'barcode' : 'search'}.
+            {`No ${methodKey === 'barcode' ? 'game with that barcode' : 'match'} in your catalog.`}
           </Text>
+          <Pressable style={styles.searchRemote} onPress={() => setIsImportMode(true)}>
+            <Text style={styles.searchRemoteText}>Search ScreenScraper</Text>
+          </Pressable>
         </View>
       );
     }
@@ -115,9 +125,9 @@ export function ScannerResults() {
         </View>
       )}
 
-      {isLoading || isError || (method === 'embedding') || (method === 'text' && !value) || results.length === 0 ? (
+      {isLoading || isError || method === 'embedding' || (method === 'text' && !value) ? (
         <View style={styles.bodyWrap}>{renderState()}</View>
-      ) : (
+      ) : results.length > 0 ? (
         <>
           <Text style={styles.resultCount}>
             {results.length} {results.length === 1 ? 'match' : 'matches'} in your shelf
@@ -129,8 +139,118 @@ export function ScannerResults() {
             renderItem={({ item }) => <MatchCard item={item} />}
           />
         </>
+      ) : isImportMode ? (
+        <ImportPanel
+          onImported={() => {
+            setIsImportMode(false);
+            refetch();
+          }}
+        />
+      ) : (
+        <View style={styles.bodyWrap}>{renderState()}</View>
       )}
     </View>
+  );
+}
+
+function ImportPanel({ onImported }: { onImported: () => void }) {
+  const [query, setQuery] = useState('');
+  const [submitted, setSubmitted] = useState<string | null>(null);
+  const { data, isLoading, isError } = useScreenScraperSearch(submitted, submitted !== null);
+  const importGame = useImportScreenScraperGame();
+
+  return (
+    <>
+      <View style={styles.importHead}>
+        <Text style={styles.importTitle}>Not in your catalog yet?</Text>
+        <Text style={styles.importSubtitle}>
+          Search the ScreenScraper database and import the physical game.
+        </Text>
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Game title..."
+            placeholderTextColor={theme.text.muted}
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={() => setSubmitted(query.trim() || null)}
+            returnKeyType="search"
+          />
+          <Pressable
+            style={[styles.searchBtn, !query.trim() && styles.searchBtnDisabled]}
+            onPress={() => setSubmitted(query.trim() || null)}
+            disabled={!query.trim()}
+          >
+            <Text style={styles.searchBtnText}>Search</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.stateWrap}>
+          <ActivityIndicator size="large" color={theme.accent.warm} />
+          <Text style={styles.stateText}>Searching ScreenScraper...</Text>
+        </View>
+      ) : isError ? (
+        <View style={styles.stateWrap}>
+          <Text style={styles.stateIcon}>🛰️</Text>
+          <Text style={styles.stateTitle}>Search failed</Text>
+          <Text style={styles.stateText}>ScreenScraper may be unreachable.</Text>
+        </View>
+      ) : submitted && data?.length ? (
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.game_id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.matchCard}
+              onPress={() => {
+                importGame.mutateAsync(item.game_id).then(() => {
+                  setSubmitted(null);
+                  setQuery('');
+                  onImported();
+                });
+              }}
+            >
+              {item.cover_url ? (
+                <Image source={{ uri: item.cover_url }} style={styles.coverImage} />
+              ) : (
+                <View style={styles.coverPlaceholder}>
+                  <Text style={styles.coverText}>🎮</Text>
+                </View>
+              )}
+              <View style={styles.matchInfo}>
+                <Text style={styles.matchTitle} numberOfLines={2}>
+                  {item.title}
+                </Text>
+                {item.system ? <Text style={styles.matchPlatform}>{item.system}</Text> : null}
+                {item.region ? <Text style={styles.matchRegion}>{item.region}</Text> : null}
+              </View>
+              <View style={styles.importAction}>
+                {importGame.isPending ? (
+                  <ActivityIndicator size="small" color={theme.accent.warm} />
+                ) : (
+                  <>
+                    <Text style={styles.importActionText}>
+                      {importGame.variables === item.game_id ? 'Importing...' : 'Import'}
+                    </Text>
+                  </>
+                )}
+              </View>
+            </Pressable>
+          )}
+        />
+      ) : (
+        <View style={styles.stateWrap}>
+          <Text style={styles.stateIcon}>🗄️</Text>
+          <Text style={styles.stateTitle}>Type a title to search</Text>
+          <Text style={styles.stateText}>
+            Matches will be imported into your catalog and then added to your shelf.
+          </Text>
+        </View>
+      )}
+    </>
   );
 }
 
@@ -153,4 +273,63 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tryAgainText: { color: theme.bg.deep, fontWeight: '700', fontSize: 14 },
+  searchRemote: {
+    marginTop: 16,
+    backgroundColor: theme.bg.surface,
+    borderWidth: 1,
+    borderColor: theme.border.default,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  searchRemoteText: { color: theme.text.primary, fontWeight: '700', fontSize: 14 },
+  importHead: { paddingHorizontal: 16, paddingBottom: 12 },
+  importTitle: { color: theme.text.primary, fontSize: 16, fontWeight: '700' },
+  importSubtitle: { color: theme.text.muted, fontSize: 13, marginTop: 4, marginBottom: 14 },
+  searchRow: { flexDirection: 'row', gap: 8 },
+  searchInput: {
+    flex: 1,
+    backgroundColor: theme.bg.card,
+    borderWidth: 1,
+    borderColor: theme.border.subtle,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: theme.text.primary,
+    fontSize: 14,
+  },
+  searchBtn: {
+    backgroundColor: theme.accent.warm,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  searchBtnDisabled: { opacity: 0.5 },
+  searchBtnText: { color: theme.bg.deep, fontWeight: '700', fontSize: 14 },
+  matchCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.bg.card,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: theme.border.subtle,
+  },
+  coverPlaceholder: {
+    width: 60,
+    height: 78,
+    backgroundColor: theme.bg.surface,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverImage: { width: 60, height: 78, borderRadius: 6, backgroundColor: theme.bg.surface },
+  coverText: { fontSize: 26, opacity: 0.4 },
+  matchInfo: { flex: 1, marginLeft: 12 },
+  matchTitle: { color: theme.text.primary, fontSize: 14, fontWeight: '600' },
+  matchPlatform: { color: theme.text.secondary, fontSize: 12, marginTop: 2 },
+  matchRegion: { color: theme.text.muted, fontSize: 11, marginTop: 1 },
+  importAction: { alignItems: 'center', justifyContent: 'center' },
+  importActionText: { color: theme.accent.warm, fontSize: 13, fontWeight: '700' },
 });
