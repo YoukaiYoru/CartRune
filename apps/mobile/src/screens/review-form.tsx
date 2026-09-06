@@ -6,22 +6,44 @@ import {
   TextInput,
   Pressable,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { ScreenHeader } from '@/components/screen-header';
+import { useCreateReview } from '@/hooks/useGames';
 import { theme } from '@/theme';
 
-export function ReviewForm() {
+export function ReviewForm({ gameId }: { gameId: string }) {
+  const router = useRouter();
+  const createReview = useCreateReview(gameId);
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [spoiler, setSpoiler] = useState(false);
+  const [error, setError] = useState('');
+
+  const handlePost = () => {
+    if (rating < 1) {
+      setError('Select a rating (1–5 stars)');
+      return;
+    }
+    setError('');
+    createReview.mutate(
+      { rating, title: title.trim(), content: content.trim(), spoiler },
+      {
+        onSuccess: () => router.back(),
+        onError: (e: any) =>
+          setError(e?.response?.data?.error || 'Failed to post review. Try again.'),
+      }
+    );
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       <ScreenHeader
         title="Write Review"
         showBack
-        rightAction={{ label: 'Post', onPress: () => {} }}
+        rightAction={{ label: 'Post', onPress: handlePost }}
       />
 
       <View style={styles.ratingSection}>
@@ -71,6 +93,12 @@ export function ReviewForm() {
         </View>
         <Text style={styles.spoilerText}>Contains spoilers</Text>
       </Pressable>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      {createReview.isPending && (
+        <ActivityIndicator color={theme.accent.primary} style={{ marginTop: 16 }} />
+      )}
     </ScrollView>
   );
 }
@@ -112,4 +140,5 @@ const styles = StyleSheet.create({
   checkboxActive: { backgroundColor: theme.accent.warm, borderColor: theme.accent.warm },
   checkmark: { color: theme.bg.deep, fontSize: 12, fontWeight: '700' },
   spoilerText: { color: theme.text.secondary, fontSize: 13 },
+  error: { color: '#e0706a', fontSize: 13, paddingHorizontal: 16, marginTop: 12 },
 });

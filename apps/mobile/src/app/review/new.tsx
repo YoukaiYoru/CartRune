@@ -1,5 +1,7 @@
+import { useLocalSearchParams } from 'expo-router';
 import { ReviewForm } from '@/screens/review-form';
 
 export default function ReviewFormScreen() {
-  return <ReviewForm />;
+  const { gameId } = useLocalSearchParams<{ gameId: string }>();
+  return <ReviewForm gameId={gameId} />;
 }
