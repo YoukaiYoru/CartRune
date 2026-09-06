@@ -9,6 +9,7 @@ import {
 import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { BarcodeType } from 'expo-camera';
+import { recognizeText } from 'expo-mlkit-ocr';
 import { theme } from '@/theme';
 import Animated, { FadeInUp, SlideInUp } from 'react-native-reanimated';
 
@@ -46,6 +47,32 @@ export function Scanner() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
       handledRef.current = true;
+
+      if (activeMethod === 'text') {
+        try {
+          const result = await recognizeText(photo.uri);
+          const firstLine = result.text
+            .split('\n')
+            .map((l) => l.trim())
+            .find((l) => l.length > 0);
+          router.push({
+            pathname: '/scanner/results',
+            params: {
+              method: 'text',
+              photo: photo.uri,
+              ...(firstLine ? { value: firstLine } : {}),
+            },
+          });
+          return;
+        } catch {
+          router.push({
+            pathname: '/scanner/results',
+            params: { method: 'text', photo: photo.uri },
+          });
+          return;
+        }
+      }
+
       router.push({
         pathname: '/scanner/results',
         params: { method: activeMethod!, photo: photo.uri },
