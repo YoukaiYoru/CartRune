@@ -11,6 +11,11 @@ type Service struct {
 	repo *Repository
 }
 
+// ActivityRecorder is the dependency consumed by review/progress/collection
+// services so they can publish social feed activity without importing social
+// internals (avoids import cycles).
+type ActivityRecorder func(userID uuid.UUID, activityType string, entityID uuid.UUID) error
+
 func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }

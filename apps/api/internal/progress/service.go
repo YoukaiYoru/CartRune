@@ -5,18 +5,25 @@ import (
 	"time"
 
 	"github.com/YoukaiYoru/api/internal/collections"
+	"github.com/YoukaiYoru/api/internal/social"
 	"github.com/google/uuid"
 )
 
 type Service struct {
 	collectionService *collections.Service
 	collectionRepo    *collections.Repository
+	rec               social.ActivityRecorder
 }
 
-func NewService(collectionService *collections.Service, collectionRepo *collections.Repository) *Service {
+func NewService(
+	collectionService *collections.Service,
+	collectionRepo *collections.Repository,
+	recorder social.ActivityRecorder,
+) *Service {
 	return &Service{
 		collectionService: collectionService,
 		collectionRepo:    collectionRepo,
+		rec:               recorder,
 	}
 }
 
@@ -80,18 +87,32 @@ func (s *Service) UpdateProgress(userID, gameID uuid.UUID, req UpdateProgressReq
 
 func (s *Service) StartGame(userID, gameID uuid.UUID) (*ProgressResponse, error) {
 	now := time.Now().Format(time.RFC3339)
-	return s.UpdateProgress(userID, gameID, UpdateProgressRequest{
+	resp, err := s.UpdateProgress(userID, gameID, UpdateProgressRequest{
 		Status:    "playing",
 		StartedAt: &now,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if s.rec != nil {
+		_ = s.rec(userID, "playing", gameID)
+	}
+	return resp, nil
 }
 
 func (s *Service) CompleteGame(userID, gameID uuid.UUID) (*ProgressResponse, error) {
 	now := time.Now().Format(time.RFC3339)
 	progress := 100
-	return s.UpdateProgress(userID, gameID, UpdateProgressRequest{
+	resp, err := s.UpdateProgress(userID, gameID, UpdateProgressRequest{
 		Status:      "completed",
 		Progress:    &progress,
 		CompletedAt: &now,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if s.rec != nil {
+		_ = s.rec(userID, "completed", gameID)
+	}
+	return resp, nil
 }

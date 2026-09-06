@@ -5,16 +5,18 @@ import (
 	"time"
 
 	"github.com/YoukaiYoru/api/internal/models"
+	"github.com/YoukaiYoru/api/internal/social"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Service struct {
 	repo *Repository
+	rec  social.ActivityRecorder
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, recorder social.ActivityRecorder) *Service {
+	return &Service{repo: repo, rec: recorder}
 }
 
 func (s *Service) GetUserLibraries(userID uuid.UUID) ([]models.Library, error) {
@@ -119,7 +121,14 @@ func (s *Service) AddGame(libraryID, userID uuid.UUID, req AddGameRequest) error
 		lg.Status = req.Status
 	}
 
-	return s.repo.AddGame(lg)
+	if err := s.repo.AddGame(lg); err != nil {
+		return err
+	}
+
+	if s.rec != nil {
+		_ = s.rec(userID, "added", gameID)
+	}
+	return nil
 }
 
 func (s *Service) RemoveGame(libraryID, userID uuid.UUID, gameID uuid.UUID) error {

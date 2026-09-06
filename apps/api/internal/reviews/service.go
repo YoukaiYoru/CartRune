@@ -4,16 +4,18 @@ import (
 	"errors"
 
 	"github.com/YoukaiYoru/api/internal/models"
+	"github.com/YoukaiYoru/api/internal/social"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Service struct {
 	repo *Repository
+	rec  social.ActivityRecorder
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, recorder social.ActivityRecorder) *Service {
+	return &Service{repo: repo, rec: recorder}
 }
 
 func (s *Service) GetGameReviews(gameID uuid.UUID, page, limit int) ([]ReviewResponse, int64, error) {
@@ -65,6 +67,10 @@ func (s *Service) CreateReview(userID uuid.UUID, req CreateReviewRequest) (*Revi
 	review, err = s.repo.FindByID(review.ID)
 	if err != nil {
 		return nil, err
+	}
+
+	if s.rec != nil {
+		_ = s.rec(userID, "review", review.ID)
 	}
 
 	resp := reviewToResponse(review, s.repo)

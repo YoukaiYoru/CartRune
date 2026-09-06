@@ -115,28 +115,28 @@ func main() {
 
 	media.Routes(api, mediaSvc)
 
+	// Social (feed activity) -> consumed by collections/progress/reviews
+	socialRepo := social.NewRepository(db)
+	socialService := social.NewService(socialRepo)
+	socialHandler := social.NewHandler(socialService)
+	social.Routes(api, socialHandler, cfg.JWTSecret)
+
 	// Libraries (Collections)
 	collectionsRepo := collections.NewRepository(db)
-	collectionsService := collections.NewService(collectionsRepo)
+	collectionsService := collections.NewService(collectionsRepo, socialService.RecordActivity)
 	collectionsHandler := collections.NewHandler(collectionsService)
 	collections.Routes(api, collectionsHandler, cfg.JWTSecret)
 
 	// Progress
-	progressService := progress.NewService(collectionsService, collectionsRepo)
+	progressService := progress.NewService(collectionsService, collectionsRepo, socialService.RecordActivity)
 	progressHandler := progress.NewHandler(progressService)
 	progress.Routes(api, progressHandler, cfg.JWTSecret)
 
 	// Reviews
 	reviewsRepo := reviews.NewRepository(db)
-	reviewsService := reviews.NewService(reviewsRepo)
+	reviewsService := reviews.NewService(reviewsRepo, socialService.RecordActivity)
 	reviewsHandler := reviews.NewHandler(reviewsService)
 	reviews.Routes(api, reviewsHandler, cfg.JWTSecret)
-
-	// Social
-	socialRepo := social.NewRepository(db)
-	socialService := social.NewService(socialRepo)
-	socialHandler := social.NewHandler(socialService)
-	social.Routes(api, socialHandler, cfg.JWTSecret)
 
 	log.Printf("CartRune API starting on port %s", cfg.ServerPort)
 	if err := app.Listen(":" + cfg.ServerPort); err != nil {
