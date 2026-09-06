@@ -2,16 +2,35 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ActivityIndicator, View } from 'react-native';
 import { useAuthStore } from '@/store/auth';
+import { theme } from '@/theme';
 
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const loadUser = useAuthStore((s) => s.loadUser);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
 
   useEffect(() => {
     loadUser();
   }, []);
+
+  if (isLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.bg.deep,
+        }}
+      >
+        <ActivityIndicator color={theme.accent.primary} size="large" />
+      </View>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -22,13 +41,22 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: '#0a0a0a' },
         }}
       >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="scanner/results" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="game/[id]" />
-        <Stack.Screen name="game/[id]/reviews" />
-        <Stack.Screen name="review/new" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="profile/edit" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="feed/index" />
+        {isAuthenticated ? (
+          <>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="scanner/results" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="game/[id]" />
+            <Stack.Screen name="game/[id]/reviews" />
+            <Stack.Screen name="review/new" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="profile/edit" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="feed/index" />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="login" />
+            <Stack.Screen name="register" />
+          </>
+        )}
       </Stack>
     </QueryClientProvider>
   );
