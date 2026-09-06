@@ -12,11 +12,17 @@ export function useLibraries() {
 }
 
 export function usePrimaryLibrary() {
-  const query = useLibraries();
-  const library = query.data?.[0];
+  const { data: libraries, isLoading } = useLibraries();
+  const firstId = libraries?.[0]?.id;
+  const detailQuery = useQuery({
+    queryKey: qk.library(firstId || ''),
+    queryFn: () => collectionsApi.getLibrary(firstId || ''),
+    enabled: !!firstId,
+  });
+
   return {
-    ...query,
-    library,
+    library: detailQuery.data,
+    isLoading: isLoading || (!!firstId && detailQuery.isLoading),
   };
 }
 

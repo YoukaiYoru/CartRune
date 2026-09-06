@@ -5,30 +5,31 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
-import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { usePrimaryLibrary } from '@/hooks/useCollections';
+import { useAuthStore } from '@/store/auth';
+import type { LibraryGame } from '@/services/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const FILTERS = ['All', 'Playing', 'Completed', 'Backlog'];
-
-const MOCK_GAMES = [
-  { id: '1', title: 'Resident Evil 4', platform: 'PS2', status: 'completed', progress: 100, color: '#3a4a3a' },
-  { id: '2', title: 'Zelda: Twilight Princess', platform: 'GameCube', status: 'playing', progress: 75, color: '#3a3a4a' },
-  { id: '3', title: 'Shadow of the Colossus', platform: 'PS2', status: 'playing', progress: 30, color: '#4a3a3a' },
-  { id: '4', title: 'Metroid Prime', platform: 'GameCube', status: 'backlog', progress: 0, color: '#3a3a38' },
-  { id: '5', title: 'Final Fantasy X', platform: 'PS2', status: 'completed', progress: 100, color: '#383a4a' },
-  { id: '6', title: 'God of War', platform: 'PS2', status: 'playing', progress: 50, color: '#4a3838' },
-];
 
 function ShelfGameCard({
   item,
   index,
   onPress,
 }: {
-  item: (typeof MOCK_GAMES)[0];
+  item: LibraryGame;
   index: number;
   onPress: () => void;
 }) {
@@ -60,8 +61,12 @@ function ShelfGameCard({
         onPressOut={onPressOut}
         onPress={onPress}
       >
-        <View style={[styles.gameCover, { backgroundColor: item.color }]}>
-          <Text style={styles.gameEmoji}>🎮</Text>
+        <View style={styles.gameCover}>
+          {item.cover_url ? (
+            <Image source={{ uri: item.cover_url }} style={styles.coverImage} resizeMode="cover" />
+          ) : (
+            <Text style={styles.gameEmoji}>🎮</Text>
+          )}
         </View>
         <View style={styles.spine} />
         <View style={styles.gameInfo}>
@@ -78,27 +83,24 @@ function ShelfGameCard({
   );
 }
 
-import {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-
 export function Library() {
   const [activeFilter, setActiveFilter] = useState('All');
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const { library, isLoading } = usePrimaryLibrary();
 
+  const allGames = library?.games ?? [];
   const filtered =
     activeFilter === 'All'
-      ? MOCK_GAMES
-      : MOCK_GAMES.filter((g) => g.status === activeFilter.toLowerCase());
+      ? allGames
+      : allGames.filter((g) => g.status === activeFilter.toLowerCase());
 
   const renderItem = useCallback(
-    ({ item, index }: { item: (typeof MOCK_GAMES)[0]; index: number }) => (
+    ({ item, index }: { item: LibraryGame; index: number }) => (
       <ShelfGameCard
         item={item}
         index={index}
-        onPress={() => router.push(`/game/${item.id}`)}
+        onPress={() => router.push(`/game/${item.game_id}`)}
       />
     ),
     [router]
@@ -107,8 +109,10 @@ export function Library() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>My Shelf</Text>
-        <Text style={styles.count}>{MOCK_GAMES.length} games</Text>
+        <Text style={styles.title}>{library?.name || 'My Shelf'}</Text>
+        <Text style={styles.count}>
+          {isLoading ? 'Loading…' : `${allGames.length} games`}
+        </Text>
       </View>
 
       <FlatList
@@ -131,14 +135,25 @@ export function Library() {
 
       <View style={styles.shelfWrapper}>
         <View style={styles.shelfPlank} />
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          columnWrapperStyle={styles.shelfRow}
-          contentContainerStyle={styles.shelfContent}
-          renderItem={renderItem}
-        />
+        {isLoading ? (
+          <ActivityIndicator color={theme.accent.primary} style={{ marginVertical: 32 }} />
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.game_id}
+            numColumns={2}
+            columnWrapperStyle={styles.shelfRow}
+            contentContainerStyle={styles.shelfContent}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>
+                {user?.username
+                  ? 'Your shelf is empty. Scan or discover a game!'
+                  : 'Create a library to get started.'}
+              </Text>
+            }
+            renderItem={renderItem}
+          />
+        )}
         <View style={styles.shelfBottom}>
           <View style={styles.shelfLip} />
         </View>
@@ -146,12 +161,6 @@ export function Library() {
     </View>
   );
 }
-
-import {
-  useSharedValue as useSharedValue2,
-  useAnimatedStyle as useAnimatedStyle2,
-  withSpring as withSpring2,
-} from 'react-native-reanimated';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg.deep },
@@ -219,7 +228,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: theme.bg.surface,
   },
+  coverImage: { width: '100%', height: '100%', backgroundColor: theme.bg.surface },
   gameEmoji: { fontSize: 32, opacity: 0.6 },
   spine: {
     height: 3,
@@ -241,4 +252,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   miniProgressFill: { height: '100%', backgroundColor: theme.accent.muted, borderRadius: 1 },
+  emptyText: { color: theme.text.muted, fontSize: 14, paddingHorizontal: 16, paddingVertical: 24 },
 });
