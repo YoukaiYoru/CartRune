@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,36 +7,131 @@ import {
   Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import type { BarcodeType } from 'expo-camera';
 import { theme } from '@/theme';
 import Animated, { FadeInUp, SlideInUp } from 'react-native-reanimated';
 
 type ScanMethod = 'barcode' | 'text' | 'embedding';
 
+const BARCODE_TYPES: BarcodeType[] = ['ean13', 'ean8', 'upc_a', 'upc_e'];
+
 export function Scanner() {
   const router = useRouter();
+  const cameraRef = useRef<CameraView>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [activeMethod, setActiveMethod] = useState<ScanMethod | null>(null);
   const [showOptions, setShowOptions] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const handledRef = useRef(false);
 
-  const handleMethodSelect = (method: ScanMethod) => {
+  const resetScan = (method: ScanMethod) => {
+    handledRef.current = false;
+    setActiveMethod(method);
     setShowOptions(false);
-    router.push({ pathname: '/scanner/results', params: { method } });
   };
+
+  const handleBarcodeScanned = (result: { type: string; data: string }) => {
+    if (activeMethod !== 'barcode' || handledRef.current) return;
+    handledRef.current = true;
+    router.push({
+      pathname: '/scanner/results',
+      params: { method: 'barcode', value: result.data, type: result.type },
+    });
+  };
+
+  const handleCapture = async () => {
+    if (isCapturing || !cameraRef.current) return;
+    setIsCapturing(true);
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
+      handledRef.current = true;
+      router.push({
+        pathname: '/scanner/results',
+        params: { method: activeMethod!, photo: photo.uri },
+      });
+    } catch {
+      setIsCapturing(false);
+    }
+  };
+
+  if (!permission) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.permissionCard}>
+          <Text style={styles.cameraText}>Camera</Text>
+          <Text style={styles.cameraSubtext}>Requesting camera access...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.permissionCard}>
+          <Text style={styles.cameraText}>Camera permission needed</Text>
+          <Text style={styles.cameraSubtext}>
+            CartRune uses the camera to scan barcodes and game covers.
+          </Text>
+          <Pressable style={styles.permissionButton} onPress={requestPermission}>
+            <Text style={styles.permissionButtonText}>Grant access</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.cameraPlaceholder}>
-        <Text style={styles.cameraIcon}>📷</Text>
-        <Text style={styles.cameraText}>Camera Preview</Text>
-        <Text style={styles.cameraSubtext}>Point at a game cover</Text>
+      <View style={styles.cameraWrap}>
+        <CameraView
+          ref={cameraRef}
+          style={StyleSheet.absoluteFill}
+          facing="back"
+          barcodeScannerSettings={{ barcodeTypes: BARCODE_TYPES }}
+          onBarcodeScanned={handleBarcodeScanned}
+        />
+
+        <View style={styles.overlayGlow}>
+          <View style={styles.targetFrame} />
+          <Text style={styles.overlayHint}>
+            {activeMethod === 'barcode'
+              ? 'Point at the barcode on the box'
+              : activeMethod === 'text'
+                ? 'Center the cover title in the frame'
+                : 'Center the game cover in the frame'}
+          </Text>
+          {activeMethod &&
+            activeMethod !== 'barcode' && (
+              <Pressable
+                style={styles.shutterButton}
+                onPress={handleCapture}
+                disabled={isCapturing}
+              >
+                <View style={styles.shutterRing}>
+                  <View style={[styles.shutterCore, isCapturing && styles.shutterCoreBusy]} />
+                </View>
+              </Pressable>
+            )}
+          {activeMethod && (
+            <Pressable
+              style={styles.openModalButton}
+              onPress={() => setShowOptions(true)}
+            >
+              <Text style={styles.openModalText}>Switch method</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
-      <Animated.View entering={FadeInUp.delay(200).springify()}>
-        <Pressable
-          style={styles.scanButton}
-          onPress={() => setShowOptions(true)}
-        >
-          <Text style={styles.scanButtonText}>SCAN GAME</Text>
-        </Pressable>
-      </Animated.View>
+      {!activeMethod ? (
+        <Animated.View entering={FadeInUp.delay(200).springify()}>
+          <Pressable style={styles.scanButton} onPress={() => setShowOptions(true)}>
+            <Text style={styles.scanButtonText}>SCAN GAME</Text>
+          </Pressable>
+        </Animated.View>
+      ) : null}
 
       <Modal visible={showOptions} transparent animationType="slide">
         <Pressable style={styles.modalOverlay} onPress={() => setShowOptions(false)}>
@@ -45,10 +140,7 @@ export function Scanner() {
             <Text style={styles.modalTitle}>Scan Method</Text>
             <Text style={styles.modalSubtitle}>How do you want to identify it?</Text>
 
-            <Pressable
-              style={styles.optionCard}
-              onPress={() => handleMethodSelect('barcode')}
-            >
+            <Pressable style={styles.optionCard} onPress={() => resetScan('barcode')}>
               <Text style={styles.optionIcon}>📊</Text>
               <View style={styles.optionInfo}>
                 <Text style={styles.optionTitle}>Barcode</Text>
@@ -56,10 +148,7 @@ export function Scanner() {
               </View>
             </Pressable>
 
-            <Pressable
-              style={styles.optionCard}
-              onPress={() => handleMethodSelect('text')}
-            >
+            <Pressable style={styles.optionCard} onPress={() => resetScan('text')}>
               <Text style={styles.optionIcon}>🔤</Text>
               <View style={styles.optionInfo}>
                 <Text style={styles.optionTitle}>Text / OCR</Text>
@@ -67,10 +156,7 @@ export function Scanner() {
               </View>
             </Pressable>
 
-            <Pressable
-              style={styles.optionCard}
-              onPress={() => handleMethodSelect('embedding')}
-            >
+            <Pressable style={styles.optionCard} onPress={() => resetScan('embedding')}>
               <Text style={styles.optionIcon}>🧠</Text>
               <View style={styles.optionInfo}>
                 <Text style={styles.optionTitle}>Visual Match</Text>
@@ -78,10 +164,7 @@ export function Scanner() {
               </View>
             </Pressable>
 
-            <Pressable
-              style={styles.cancelButton}
-              onPress={() => setShowOptions(false)}
-            >
+            <Pressable style={styles.cancelButton} onPress={() => setShowOptions(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
           </Animated.View>
@@ -93,20 +176,92 @@ export function Scanner() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg.deep },
-  cameraPlaceholder: {
+  cameraWrap: { flex: 1, overflow: 'hidden' },
+  overlayGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  targetFrame: {
+    width: 240,
+    height: 240,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: theme.accent.warm,
+    opacity: 0.9,
+    shadowColor: theme.accent.warm,
+    shadowOpacity: 0.4,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  overlayHint: {
+    color: theme.text.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 16,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowRadius: 6,
+  },
+  shutterButton: {
+    position: 'absolute',
+    bottom: 48,
+    alignSelf: 'center',
+  },
+  shutterRing: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 4,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shutterCore: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#fff',
+  },
+  shutterCoreBusy: { backgroundColor: theme.accent.warm },
+  openModalButton: {
+    position: 'absolute',
+    bottom: 48,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  openModalText: { color: theme.text.primary, fontSize: 13, fontWeight: '600' },
+  cameraText: { color: theme.text.primary, fontSize: 16, fontWeight: '600' },
+  cameraSubtext: {
+    color: theme.text.muted,
+    fontSize: 13,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  permissionCard: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.bg.card,
     margin: 16,
     borderRadius: 14,
+    padding: 24,
     borderWidth: 1,
     borderColor: theme.border.subtle,
-    borderStyle: 'dashed',
   },
-  cameraIcon: { fontSize: 56, marginBottom: 12, opacity: 0.4 },
-  cameraText: { color: theme.text.primary, fontSize: 16, fontWeight: '600' },
-  cameraSubtext: { color: theme.text.muted, fontSize: 13, marginTop: 4 },
+  permissionButton: {
+    marginTop: 16,
+    backgroundColor: theme.accent.warm,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  permissionButtonText: { color: theme.bg.deep, fontWeight: '700', fontSize: 14 },
   scanButton: {
     backgroundColor: theme.accent.warm,
     marginHorizontal: 16,
