@@ -17,7 +17,7 @@ export function ReviewCard({ username, rating, title, content, date }: ReviewCar
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{username[0].toUpperCase()}</Text>
+          <Text style={styles.avatarText}>{(username || '?')[0].toUpperCase()}</Text>
         </View>
         <View style={styles.userInfo}>
           <Text style={styles.username}>{username}</Text>

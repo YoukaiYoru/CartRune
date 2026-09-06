@@ -1,37 +1,23 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '@/components/screen-header';
 import { ReviewCard } from '@/components/review-card';
+import { useGameReviews } from '@/hooks/useGames';
+import { theme } from '@/theme';
+import type { Review } from '@/services/types';
 
-const MOCK_REVIEWS = [
-  {
-    id: '1',
-    username: 'gamer42',
-    rating: 5,
-    title: 'Masterpiece',
-    content: 'One of the best games ever made. The controls are tight and the atmosphere is incredible.',
-    created_at: '2025-01-15',
-  },
-  {
-    id: '2',
-    username: 'retrofan',
-    rating: 4,
-    title: 'Great but dated',
-    content: 'Still a fantastic game but the camera can be frustrating at times.',
-    created_at: '2025-01-10',
-  },
-  {
-    id: '3',
-    username: 'horrorlover',
-    rating: 5,
-    title: 'Perfect survival horror',
-    content: 'The best in the series. The village section alone is worth the price of admission.',
-    created_at: '2024-12-28',
-  },
-];
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString();
+  } catch {
+    return iso;
+  }
+}
 
 export function GameReviews({ id }: { id: string }) {
   const router = useRouter();
+  const { data, isLoading } = useGameReviews(id);
+  const reviews = data?.reviews ?? [];
 
   return (
     <View style={styles.container}>
@@ -44,20 +30,27 @@ export function GameReviews({ id }: { id: string }) {
         }}
       />
 
-      <FlatList
-        data={MOCK_REVIEWS}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <ReviewCard
-            username={item.username}
-            rating={item.rating}
-            title={item.title}
-            content={item.content}
-            date={item.created_at}
-          />
-        )}
-      />
+      {isLoading ? (
+        <ActivityIndicator color={theme.accent.primary} style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={reviews}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={styles.empty}>No reviews yet. Be the first to write one!</Text>
+          }
+          renderItem={({ item }: { item: Review }) => (
+            <ReviewCard
+              username={item.username ?? 'unknown'}
+              rating={item.rating}
+              title={item.title}
+              content={item.content}
+              date={formatDate(item.created_at)}
+            />
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -65,4 +58,5 @@ export function GameReviews({ id }: { id: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a' },
   list: { paddingHorizontal: 16 },
+  empty: { color: theme.text.muted, fontSize: 14, textAlign: 'center', marginTop: 60 },
 });
