@@ -1,4 +1,5 @@
-import { StyleSheet, Pressable, View, Text, Image } from 'react-native';
+import { StyleSheet, Pressable, View, Text } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,6 +9,8 @@ import Animated, {
 import { theme } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const BLURHASH = 'LON8t;~qM{Rj?w%Mofofxut7t7t7';
 
 interface GameCardProps {
   title: string;
@@ -58,7 +61,13 @@ export function GameCard({
     >
       <View style={[styles.cover, isSmall && styles.coverSmall]}>
         {coverUrl ? (
-          <Image source={{ uri: coverUrl }} style={styles.coverImage} resizeMode="cover" />
+          <Image
+            source={{ uri: coverUrl }}
+            style={styles.coverImage}
+            contentFit="cover"
+            transition={150}
+            placeholder={BLURHASH}
+          />
         ) : (
           <Text style={styles.coverEmoji}>🎮</Text>
         )}

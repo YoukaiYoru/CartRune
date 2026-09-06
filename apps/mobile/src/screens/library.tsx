@@ -5,9 +5,9 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  Image,
   ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
 import Animated, {
@@ -63,7 +63,12 @@ function ShelfGameCard({
       >
         <View style={styles.gameCover}>
           {item.cover_url ? (
-            <Image source={{ uri: item.cover_url }} style={styles.coverImage} resizeMode="cover" />
+            <Image
+              source={{ uri: item.cover_url }}
+              style={styles.coverImage}
+              contentFit="cover"
+              transition={150}
+            />
           ) : (
             <Text style={styles.gameEmoji}>🎮</Text>
           )}

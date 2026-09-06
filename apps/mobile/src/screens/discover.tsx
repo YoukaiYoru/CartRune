@@ -6,9 +6,9 @@ import {
   TextInput,
   FlatList,
   Pressable,
-  Image,
   ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
@@ -71,7 +71,12 @@ export function Discover() {
             >
               <View style={styles.cover}>
                 {item.cover_url ? (
-                  <Image source={{ uri: item.cover_url }} style={styles.coverImage} resizeMode="cover" />
+                  <Image
+                    source={{ uri: item.cover_url }}
+                    style={styles.coverImage}
+                    contentFit="cover"
+                    transition={150}
+                  />
                 ) : (
                   <Text style={styles.coverEmoji}>🎮</Text>
                 )}

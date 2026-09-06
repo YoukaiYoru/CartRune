@@ -4,9 +4,9 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Image,
   ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '@/components/screen-header';
 import { ProgressBar } from '@/components/progress-bar';
@@ -50,7 +50,12 @@ export function GameDetail({ id }: { id: string }) {
       <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.coverWrap}>
         <View style={styles.cover}>
           {primaryCover ? (
-            <Image source={{ uri: primaryCover.url }} style={styles.coverImage} resizeMode="cover" />
+            <Image
+              source={{ uri: primaryCover.url }}
+              style={styles.coverImage}
+              contentFit="cover"
+              transition={200}
+            />
           ) : (
             <Text style={styles.coverEmoji}>🎮</Text>
           )}
