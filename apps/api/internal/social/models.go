@@ -14,5 +14,6 @@ type FeedItem struct {
 	AvatarURL string `json:"avatar_url"`
 	Type      string `json:"type"`
 	EntityID  string `json:"entity_id"`
+	Title     string `json:"title,omitempty"`
 	CreatedAt string `json:"created_at"`
 }

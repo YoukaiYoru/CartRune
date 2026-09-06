@@ -1,13 +1,8 @@
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { useFeed } from '@/hooks/useFeed';
 import { theme } from '@/theme';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
-
-const MOCK_FEED = [
-  { id: '1', username: 'gamer42', type: 'completed', game: 'Resident Evil 4', time: '2h ago' },
-  { id: '2', username: 'retrofan', type: 'review', game: 'Zelda: Ocarina of Time', rating: 5, time: '5h ago' },
-  { id: '3', username: 'horrorlover', type: 'added', game: 'Silent Hill 2', time: '1d ago' },
-  { id: '4', username: 'gamer42', type: 'playing', game: 'Metroid Prime', progress: 45, time: '2d ago' },
-];
+import type { FeedItem } from '@/services/types';
 
 const typeEmoji: Record<string, string> = {
   completed: '🏆',
@@ -16,38 +11,76 @@ const typeEmoji: Record<string, string> = {
   playing: '🎮',
 };
 
+function typeLabel(type: string): string {
+  switch (type) {
+    case 'completed':
+      return 'completed';
+    case 'review':
+      return 'reviewed';
+    case 'added':
+      return 'added to library';
+    case 'playing':
+      return 'is playing';
+    default:
+      return 'is active on';
+  }
+}
+
+function formatTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const diffMin = Math.floor((now - then) / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}h ago`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 7) return `${diffD}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 export function Feed() {
+  const { data, isLoading } = useFeed(1);
+  const items = data ?? [];
+
   return (
     <View style={styles.container}>
       <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
         <Text style={styles.title}>Activity Feed</Text>
       </Animated.View>
 
-      <FlatList
-        data={MOCK_FEED}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInRight.delay(index * 60).springify()}>
-            <View style={styles.feedItem}>
-              <Text style={styles.emoji}>{typeEmoji[item.type] || '•'}</Text>
-              <View style={styles.feedInfo}>
-                <Text style={styles.feedText}>
-                  <Text style={styles.feedUser}>{item.username}</Text>
-                  {' '}
-                  {item.type === 'completed' && 'completed'}
-                  {item.type === 'review' && `reviewed (${'★'.repeat(item.rating || 0)})`}
-                  {item.type === 'added' && 'added to library'}
-                  {item.type === 'playing' && `is playing (${item.progress}%)`}
-                  {' '}
-                  <Text style={styles.feedGame}>{item.game}</Text>
-                </Text>
-                <Text style={styles.feedTime}>{item.time}</Text>
+      {isLoading ? (
+        <ActivityIndicator color={theme.accent.primary} style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={styles.empty}>No activity yet. Follow friends to see what they play!</Text>
+          }
+          renderItem={({ item, index }: { item: FeedItem; index: number }) => (
+            <Animated.View entering={FadeInRight.delay(index * 60).springify()}>
+              <View style={styles.feedItem}>
+                <Text style={styles.emoji}>{typeEmoji[item.type] || '•'}</Text>
+                <View style={styles.feedInfo}>
+                  <Text style={styles.feedText}>
+                    <Text style={styles.feedUser}>{item.username || 'someone'}</Text>{' '}
+                    {typeLabel(item.type)}
+                    {item.title ? (
+                      <>
+                        {' '}
+                        <Text style={styles.feedGame}>{item.title}</Text>
+                      </>
+                    ) : null}
+                  </Text>
+                  <Text style={styles.feedTime}>{formatTime(item.created_at)}</Text>
+                </View>
               </View>
-            </View>
-          </Animated.View>
-        )}
-      />
+            </Animated.View>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -57,6 +90,7 @@ const styles = StyleSheet.create({
   header: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 12 },
   title: { color: theme.text.primary, fontSize: 24, fontWeight: '700' },
   list: { paddingHorizontal: 16 },
+  empty: { color: theme.text.muted, fontSize: 14, textAlign: 'center', marginTop: 60 },
   feedItem: {
     flexDirection: 'row',
     backgroundColor: theme.bg.card,

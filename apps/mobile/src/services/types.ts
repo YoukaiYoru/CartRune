@@ -159,6 +159,7 @@ export interface FeedItem {
   avatar_url: string;
   type: string;
   entity_id: string;
+  title?: string;
   created_at: string;
 }
 

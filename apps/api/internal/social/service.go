@@ -68,6 +68,22 @@ func (s *Service) GetFeed(userID uuid.UUID, page, limit int) ([]FeedItem, error)
 		}
 		items = append(items, item)
 	}
+
+	if len(items) > 0 {
+		entities := make([]uuid.UUID, 0, len(items))
+		for _, a := range activities {
+			entities = append(entities, a.EntityID)
+		}
+		titles, err := s.repo.ResolveTitles(entities)
+		if err == nil {
+			for i, a := range activities {
+				if title, ok := titles[a.EntityID]; ok {
+					items[i].Title = title
+				}
+			}
+		}
+	}
+
 	return items, nil
 }
 
