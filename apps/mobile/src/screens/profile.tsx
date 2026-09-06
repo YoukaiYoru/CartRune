@@ -8,20 +8,24 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth';
 import { Avatar } from '@/components/avatar';
+import { useProfile } from '@/hooks/useProfile';
 import { theme } from '@/theme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-
-const MOCK_STATS = {
-  games: 127,
-  completed: 73,
-  hours: 812,
-  avgRating: 4.3,
-};
 
 export function Profile() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { data: profile } = useProfile(user?.username ?? '');
+
+  const stats = profile
+    ? {
+        games: profile.games_count,
+        completed: profile.completed_count,
+        hours: Math.round(profile.hours_played),
+        avgRating: profile.avg_rating.toFixed(1),
+      }
+    : { games: 0, completed: 0, hours: 0, avgRating: '0.0' };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -33,22 +37,22 @@ export function Profile() {
 
       <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.statsRow}>
         <View style={styles.stat}>
-          <Text style={styles.statValue}>{MOCK_STATS.games}</Text>
+          <Text style={styles.statValue}>{stats.games}</Text>
           <Text style={styles.statLabel}>Games</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>
-          <Text style={styles.statValue}>{MOCK_STATS.completed}</Text>
+          <Text style={styles.statValue}>{stats.completed}</Text>
           <Text style={styles.statLabel}>Done</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>
-          <Text style={styles.statValue}>{MOCK_STATS.hours}</Text>
+          <Text style={styles.statValue}>{stats.hours}</Text>
           <Text style={styles.statLabel}>Hours</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>
-          <Text style={styles.statValue}>{MOCK_STATS.avgRating}</Text>
+          <Text style={styles.statValue}>{stats.avgRating}</Text>
           <Text style={styles.statLabel}>Avg</Text>
         </View>
       </Animated.View>
