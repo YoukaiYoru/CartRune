@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+.env
+
+# Builds
+dist/
+android/
+ios/
+web/
+
+# Media proxy cache (downloaded covers / copyrighted artwork)
+apps/api/data/
