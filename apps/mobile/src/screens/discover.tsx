@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,21 +6,26 @@ import {
   TextInput,
   FlatList,
   Pressable,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/theme';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
-
-const MOCK_RESULTS = [
-  { id: '1', title: 'The Legend of Zelda: Ocarina of Time', platform: 'Nintendo 64' },
-  { id: '2', title: "The Legend of Zelda: Majora's Mask", platform: 'Nintendo 64' },
-  { id: '3', title: 'The Legend of Zelda: Twilight Princess', platform: 'GameCube' },
-  { id: '4', title: 'The Legend of Zelda: Wind Waker', platform: 'GameCube' },
-];
+import { useSearchGames } from '@/hooks/useGames';
 
 export function Discover() {
   const [query, setQuery] = useState('');
+  const [debounced, setDebounced] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(query.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const { data, isLoading } = useSearchGames(debounced);
+  const results = data?.games ?? [];
 
   return (
     <View style={styles.container}>
@@ -35,19 +40,27 @@ export function Discover() {
           placeholderTextColor={theme.text.muted}
           value={query}
           onChangeText={setQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
       </Animated.View>
 
       <FlatList
-        data={query ? MOCK_RESULTS : []}
+        data={results}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🎮</Text>
-            <Text style={styles.emptyText}>
-              {query ? 'No results found' : 'Start typing to search'}
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator color={theme.accent.primary} />
+            ) : (
+              <>
+                <Text style={styles.emptyIcon}>🎮</Text>
+                <Text style={styles.emptyText}>
+                  {debounced ? 'No results found' : 'Start typing to search'}
+                </Text>
+              </>
+            )}
           </View>
         }
         renderItem={({ item, index }) => (
@@ -57,11 +70,15 @@ export function Discover() {
               onPress={() => router.push(`/game/${item.id}`)}
             >
               <View style={styles.cover}>
-                <Text style={styles.coverEmoji}>🎮</Text>
+                {item.cover_url ? (
+                  <Image source={{ uri: item.cover_url }} style={styles.coverImage} resizeMode="cover" />
+                ) : (
+                  <Text style={styles.coverEmoji}>🎮</Text>
+                )}
               </View>
               <View style={styles.info}>
                 <Text style={styles.resultTitle}>{item.title}</Text>
-                <Text style={styles.resultPlatform}>{item.platform}</Text>
+                <Text style={styles.resultPlatform}>{item.developer || item.publisher || 'Unknown developer'}</Text>
               </View>
             </Pressable>
           </Animated.View>
@@ -106,7 +123,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
+  coverImage: { width: '100%', height: '100%', backgroundColor: theme.bg.surface },
   coverEmoji: { fontSize: 22, opacity: 0.5 },
   info: { marginLeft: 12, flex: 1 },
   resultTitle: { color: theme.text.primary, fontSize: 14, fontWeight: '600' },
