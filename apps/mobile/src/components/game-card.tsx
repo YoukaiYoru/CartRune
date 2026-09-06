@@ -1,4 +1,4 @@
-import { StyleSheet, Pressable, View, Text } from 'react-native';
+import { StyleSheet, Pressable, View, Text, Image } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,10 +14,18 @@ interface GameCardProps {
   platform: string;
   progress?: number;
   size?: 'small' | 'medium';
+  coverUrl?: string;
   onPress: () => void;
 }
 
-export function GameCard({ title, platform, progress, size = 'medium', onPress }: GameCardProps) {
+export function GameCard({
+  title,
+  platform,
+  progress,
+  size = 'medium',
+  coverUrl,
+  onPress,
+}: GameCardProps) {
   const isSmall = size === 'small';
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
@@ -49,7 +57,11 @@ export function GameCard({ title, platform, progress, size = 'medium', onPress }
       accessibilityLabel={`${title}, ${platform}`}
     >
       <View style={[styles.cover, isSmall && styles.coverSmall]}>
-        <Text style={styles.coverEmoji}>🎮</Text>
+        {coverUrl ? (
+          <Image source={{ uri: coverUrl }} style={styles.coverImage} resizeMode="cover" />
+        ) : (
+          <Text style={styles.coverEmoji}>🎮</Text>
+        )}
         <View style={styles.coverShine} />
       </View>
       <Text style={styles.title} numberOfLines={1}>{title}</Text>
@@ -83,6 +95,7 @@ const styles = StyleSheet.create({
   },
   coverSmall: { width: 130, height: 170, aspectRatio: undefined },
   coverEmoji: { fontSize: 36 },
+  coverImage: { width: '100%', height: '100%', backgroundColor: theme.bg.surface },
   coverShine: {
     position: 'absolute',
     top: 0,

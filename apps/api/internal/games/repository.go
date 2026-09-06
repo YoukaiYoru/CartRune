@@ -110,6 +110,54 @@ func (r *Repository) GetStats(gameID uuid.UUID) (avgRating float64, reviewsCount
 	return
 }
 
+func (r *Repository) GetPrimaryCovers(gameIDs []uuid.UUID) (map[uuid.UUID]models.Cover, error) {
+	byGame := make(map[uuid.UUID]models.Cover)
+	if len(gameIDs) == 0 {
+		return byGame, nil
+	}
+
+	var covers []models.Cover
+	err := r.db.
+		Where("game_id IN ? AND primary = true", gameIDs).
+		Find(&covers).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Fall back to the first cover per game if no primary flag is set.
+	seen := make(map[uuid.UUID]bool)
+	for _, cv := range covers {
+		if !seen[cv.GameID] {
+			byGame[cv.GameID] = cv
+			seen[cv.GameID] = true
+		}
+	}
+
+	if len(byGame) < len(gameIDs) {
+		var remainder []uuid.UUID
+		for _, id := range gameIDs {
+			if !seen[id] {
+				remainder = append(remainder, id)
+			}
+		}
+		var fallback []models.Cover
+		err = r.db.
+			Where("game_id IN ?", remainder).
+			Order("created_at ASC").
+			Find(&fallback).Error
+		if err != nil {
+			return nil, err
+		}
+		for _, cv := range fallback {
+			if _, ok := byGame[cv.GameID]; !ok {
+				byGame[cv.GameID] = cv
+			}
+		}
+	}
+
+	return byGame, nil
+}
+
 func (r *Repository) FindByBarcode(barcode string) ([]models.Game, error) {
 	// Search in releases or a future barcode field
 	var games []models.Game

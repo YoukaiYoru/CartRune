@@ -25,6 +25,7 @@ export interface Game {
   developer: string;
   publisher: string;
   release_date?: string;
+  cover_url?: string;
 }
 
 export interface PaginatedGames {

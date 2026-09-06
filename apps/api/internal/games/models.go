@@ -8,6 +8,7 @@ type GameResponse struct {
 	Developer   string `json:"developer"`
 	Publisher   string `json:"publisher"`
 	ReleaseDate string `json:"release_date,omitempty"`
+	CoverURL    string `json:"cover_url,omitempty"`
 }
 
 type GameDetailResponse struct {

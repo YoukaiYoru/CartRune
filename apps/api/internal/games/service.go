@@ -53,9 +53,9 @@ func (s *Service) Search(query string, page, limit int) (*PaginatedGames, error)
 		return nil, err
 	}
 
-	var responseGames []GameResponse
-	for _, g := range games {
-		responseGames = append(responseGames, gameToResponse(&g))
+	responseGames, err := s.toResponses(games)
+	if err != nil {
+		return nil, err
 	}
 
 	return &PaginatedGames{
@@ -80,9 +80,9 @@ func (s *Service) List(page, limit int) (*PaginatedGames, error) {
 		return nil, err
 	}
 
-	var responseGames []GameResponse
-	for _, g := range games {
-		responseGames = append(responseGames, gameToResponse(&g))
+	responseGames, err := s.toResponses(games)
+	if err != nil {
+		return nil, err
 	}
 
 	return &PaginatedGames{
@@ -91,6 +91,28 @@ func (s *Service) List(page, limit int) (*PaginatedGames, error) {
 		Page:  page,
 		Limit: limit,
 	}, nil
+}
+
+func (s *Service) toResponses(games []models.Game) ([]GameResponse, error) {
+	ids := make([]uuid.UUID, 0, len(games))
+	for _, g := range games {
+		ids = append(ids, g.ID)
+	}
+
+	primaryCovers, err := s.repo.GetPrimaryCovers(ids)
+	if err != nil {
+		return nil, err
+	}
+
+	responseGames := make([]GameResponse, 0, len(games))
+	for _, g := range games {
+		resp := gameToResponse(&g)
+		if cv, ok := primaryCovers[g.ID]; ok {
+			resp.CoverURL = media.CoverPath(cv.ID)
+		}
+		responseGames = append(responseGames, resp)
+	}
+	return responseGames, nil
 }
 
 func (s *Service) GetReleases(gameID uuid.UUID) ([]ReleaseResponse, error) {
