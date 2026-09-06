@@ -10,6 +10,8 @@ import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { BarcodeType } from 'expo-camera';
 import { recognizeText } from 'expo-mlkit-ocr';
+import { embedPhoto } from '@/services/embeddings';
+import { setEmbedding } from '@/lib/embedding-cache';
 import { theme } from '@/theme';
 import Animated, { FadeInUp, SlideInUp } from 'react-native-reanimated';
 
@@ -87,6 +89,23 @@ export function Scanner({ preset }: { preset?: string }) {
           });
           return;
         }
+      }
+
+      if (activeMethod === 'embedding') {
+        try {
+          const embedding = await embedPhoto(photo.uri);
+          setEmbedding(photo.uri, embedding);
+          router.push({
+            pathname: '/scanner/results',
+            params: { method: 'embedding', photo: photo.uri },
+          });
+        } catch {
+          router.push({
+            pathname: '/scanner/results',
+            params: { method: 'embedding', photo: photo.uri, failed: '1' },
+          });
+        }
+        return;
       }
 
       router.push({

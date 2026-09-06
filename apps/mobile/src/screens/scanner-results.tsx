@@ -10,7 +10,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { scanBarcode, scanText } from '@/services/scanner';
+import { scanBarcode, scanText, matchEmbedding } from '@/services/scanner';
+import { getEmbedding } from '@/lib/embedding-cache';
 import { Image } from 'expo-image';
 import { MatchCard } from '@/components/match-card';
 import {
@@ -29,19 +30,24 @@ const methodLabel: Record<string, string> = {
 export function ScannerResults() {
   const router = useRouter();
   const [isImportMode, setIsImportMode] = useState(false);
-  const { method, value, photo } = useLocalSearchParams<{
+  const { method, value, photo, failed } = useLocalSearchParams<{
     method: string;
     value?: string;
     photo?: string;
     type?: string;
+    failed?: string;
   }>();
+
+  const embedding = photo ? getEmbedding(photo) : undefined;
 
   const scanFn =
     method === 'barcode' && value
       ? () => scanBarcode(value)
       : method === 'text' && value
         ? () => scanText(value)
-        : null;
+        : method === 'embedding' && embedding
+          ? () => matchEmbedding(embedding)
+          : null;
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['scanner', method, value ?? photo],
@@ -76,13 +82,25 @@ export function ScannerResults() {
       );
     }
 
-    if (method === 'embedding') {
+    if (failed === '1') {
       return (
         <View style={styles.stateWrap}>
           <Text style={styles.stateIcon}>🧠</Text>
-          <Text style={styles.stateTitle}>Visual matching is coming</Text>
+          <Text style={styles.stateTitle}>Could not analyze the cover</Text>
           <Text style={styles.stateText}>
-            AI cover recognition is being wired up. Check back soon.
+            The embedding service is offline. Try again from the scanner.
+          </Text>
+        </View>
+      );
+    }
+
+    if (method === 'embedding' && !embedding) {
+      return (
+        <View style={styles.stateWrap}>
+          <Text style={styles.stateIcon}>🧠</Text>
+          <Text style={styles.stateTitle}>Analyzing cover...</Text>
+          <Text style={styles.stateText}>
+            Embedding not ready. Capture the cover again.
           </Text>
         </View>
       );
@@ -146,7 +164,7 @@ export function ScannerResults() {
         </View>
       )}
 
-      {isLoading || isError || method === 'embedding' || (method === 'text' && !value) ? (
+      {isLoading || isError || (method === 'text' && !value) || (method === 'embedding' && !embedding) || failed === '1' ? (
         <View style={styles.bodyWrap}>{renderState()}</View>
       ) : results.length > 0 ? (
         <>
