@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { scanBarcode, scanText } from '@/services/scanner';
@@ -27,6 +27,7 @@ const methodLabel: Record<string, string> = {
 };
 
 export function ScannerResults() {
+  const router = useRouter();
   const [isImportMode, setIsImportMode] = useState(false);
   const { method, value, photo } = useLocalSearchParams<{
     method: string;
@@ -100,6 +101,28 @@ export function ScannerResults() {
     }
 
     if (results.length === 0 && !isImportMode) {
+      const fallback = (
+        <View style={styles.fallbackRow}>
+          <Pressable
+            style={styles.fallbackBtn}
+            onPress={() => router.push({ pathname: '/(tabs)/scanner', params: { preset: 'text' } })}
+          >
+            <Text style={styles.fallbackBtnText}>🔤 OCR</Text>
+          </Pressable>
+          <Pressable
+            style={styles.fallbackBtn}
+            onPress={() => router.push({ pathname: '/(tabs)/scanner', params: { preset: 'embedding' } })}
+          >
+            <Text style={styles.fallbackBtnText}>🧠 Visual</Text>
+          </Pressable>
+          <Pressable
+            style={styles.fallbackBtn}
+            onPress={() => setIsImportMode(true)}
+          >
+            <Text style={styles.fallbackBtnText}>🗄️ Import</Text>
+          </Pressable>
+        </View>
+      );
       return (
         <View style={styles.stateWrap}>
           <Text style={styles.stateIcon}>🔍</Text>
@@ -107,9 +130,7 @@ export function ScannerResults() {
           <Text style={styles.stateText}>
             {`No ${methodKey === 'barcode' ? 'game with that barcode' : 'match'} in your catalog.`}
           </Text>
-          <Pressable style={styles.searchRemote} onPress={() => setIsImportMode(true)}>
-            <Text style={styles.searchRemoteText}>Search ScreenScraper</Text>
-          </Pressable>
+          {fallback}
         </View>
       );
     }
@@ -273,16 +294,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tryAgainText: { color: theme.bg.deep, fontWeight: '700', fontSize: 14 },
-  searchRemote: {
-    marginTop: 16,
+  fallbackRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  fallbackBtn: {
     backgroundColor: theme.bg.surface,
     borderWidth: 1,
     borderColor: theme.border.default,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
   },
-  searchRemoteText: { color: theme.text.primary, fontWeight: '700', fontSize: 14 },
+  fallbackBtnText: { color: theme.text.primary, fontWeight: '700', fontSize: 14 },
   importHead: { paddingHorizontal: 16, paddingBottom: 12 },
   importTitle: { color: theme.text.primary, fontSize: 16, fontWeight: '700' },
   importSubtitle: { color: theme.text.muted, fontSize: 13, marginTop: 4, marginBottom: 14 },

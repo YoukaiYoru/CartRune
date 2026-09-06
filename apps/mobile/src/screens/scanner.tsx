@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -17,14 +17,30 @@ type ScanMethod = 'barcode' | 'text' | 'embedding';
 
 const BARCODE_TYPES: BarcodeType[] = ['ean13', 'ean8', 'upc_a', 'upc_e'];
 
-export function Scanner() {
+export function Scanner({ preset }: { preset?: string }) {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
-  const [activeMethod, setActiveMethod] = useState<ScanMethod | null>(null);
+  const [activeMethod, setActiveMethod] = useState<ScanMethod | null>(
+    preset && (preset === 'barcode' || preset === 'text' || preset === 'embedding')
+      ? preset
+      : null
+  );
   const [showOptions, setShowOptions] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const handledRef = useRef(false);
+
+  useEffect(() => {
+    if (!preset) return;
+    if (preset === activeMethod) return;
+    handledRef.current = false;
+    setActiveMethod(
+      preset === 'barcode' || preset === 'text' || preset === 'embedding'
+        ? (preset as ScanMethod)
+        : null
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset]);
 
   const resetScan = (method: ScanMethod) => {
     handledRef.current = false;

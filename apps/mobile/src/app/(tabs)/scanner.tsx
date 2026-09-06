@@ -1,5 +1,7 @@
+import { useLocalSearchParams } from 'expo-router';
 import { Scanner } from '@/screens/scanner';
 
 export default function ScannerScreen() {
-  return <Scanner />;
+  const { preset } = useLocalSearchParams<{ preset?: string }>();
+  return <Scanner preset={preset} />;
 }
