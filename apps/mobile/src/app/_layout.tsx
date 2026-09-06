@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ActivityIndicator, View } from 'react-native';
 import { useAuthStore } from '@/store/auth';
+import { queryClient } from '@/lib/query-client';
 import { theme } from '@/theme';
-
-const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const loadUser = useAuthStore((s) => s.loadUser);
