@@ -18,6 +18,7 @@ import (
 	"github.com/YoukaiYoru/api/internal/screenscraper"
 	"github.com/YoukaiYoru/api/internal/social"
 	"github.com/YoukaiYoru/api/internal/users"
+	"github.com/YoukaiYoru/api/internal/vector"
 	"github.com/YoukaiYoru/api/pkg/database"
 	"github.com/gofiber/fiber/v3"
 	"github.com/joho/godotenv"
@@ -94,6 +95,16 @@ func main() {
 	games.Routes(api, gamesHandler)
 
 	// Scanner
+	vectorSvc := vector.NewService(vector.Options{
+		Host:   cfg.QdrantHost,
+		Port:   cfg.QdrantPort,
+		APIKey: cfg.QdrantAPIKey,
+	})
+	if !vectorSvc.Healthy(context.Background()) {
+		log.Printf("WARN: Qdrant unreachable (%s:%d); visual matching (/scanner/match) will be unavailable", cfg.QdrantHost, cfg.QdrantPort)
+	} else if err := vectorSvc.EnsureCollection(context.Background(), vector.DefaultDims); err != nil {
+		log.Printf("WARN: Qdrant collection setup failed: %v", err)
+	}
 	scannerService := scanner.NewService(gamesRepo)
 	scannerHandler := scanner.NewHandler(scannerService)
 	scanner.Routes(api, scannerHandler, cfg.JWTSecret)
