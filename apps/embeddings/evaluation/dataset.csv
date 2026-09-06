@@ -1,0 +1,15 @@
+# Dataset de evaluacion del matcher visual.
+#
+# Cada fila es una consulta: una foto/portada real capturada con la app
+# (query_cover_id) y el juego esperado que deberia devolver el matcher.
+# query_cover_id hace referencia a un cover de la tabla `covers` del
+# catalogo (se calcula su embedding igual que en produccion).
+#
+# Para poblarlo: importa juegos con ScreenScraper, apunta el worker de
+# indexado, captura fotos de esas cajas con la app y auellena los UUIDs.
+
+expected_game_id,query_cover_id,title,platform,region,notes
+<placeholder-uuid>,<placeholder-uuid>,Super Mario World,SNES,eu,foto frontal de la caja
+<placeholder-uuid>,<placeholder-uuid>,The Legend of Zelda: Ocarina of Time,Nintendo 64,eu,foto con ligera rotacion
+<placeholder-uuid>,<placeholder-uuid>,Metal Gear Solid,PlayStation,eu,foto con baja luz
+<placeholder-uuid>,<placeholder-uuid>,Sonic the Hedgehog 2,Mega Drive,eu,foto parcial del arte
