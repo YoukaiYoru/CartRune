@@ -1,0 +1,13 @@
+mobileclip @ git+https://github.com/apple/ml-mobileclip.git
+open_clip_torch>=2.24
+torch>=2.1
+Pillow>=10.0
+numpy>=1.26
+requests>=2.31
+psycopg2-binary>=2.9
+qdrant-client>=1.9
+huggingface-hub>=0.23
+python-dotenv>=1.0
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
