@@ -19,7 +19,8 @@ export async function embedPhoto(uri: string): Promise<number[]> {
   const resp = await fetch(`${EMBEDDINGS_BASE}/embed`, {
     method: 'POST',
     body: form,
-    headers: { 'Content-Type': 'multipart/form-data' },
+    // Do NOT set Content-Type manually: React Native must generate the
+    // multipart boundary itself, otherwise FastAPI cannot parse the upload.
   });
 
   if (!resp.ok) {
