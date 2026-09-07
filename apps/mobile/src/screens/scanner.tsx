@@ -9,9 +9,9 @@ import {
 import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { BarcodeType } from 'expo-camera';
-import { recognizeText } from 'expo-mlkit-ocr';
 import { embedPhoto } from '@/services/embeddings';
 import { setEmbedding } from '@/lib/embedding-cache';
+import { isOcrAvailable, recognizeTextSafe } from '@/lib/mlkit';
 import { theme } from '@/theme';
 import Animated, { FadeInUp, SlideInUp } from 'react-native-reanimated';
 
@@ -30,6 +30,7 @@ export function Scanner({ preset }: { preset?: string }) {
   );
   const [showOptions, setShowOptions] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [ocrUnavailable, setOcrUnavailable] = useState(false);
   const handledRef = useRef(false);
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export function Scanner({ preset }: { preset?: string }) {
     handledRef.current = false;
     setActiveMethod(method);
     setShowOptions(false);
+    setOcrUnavailable(false);
   };
 
   const handleBarcodeScanned = (result: { type: string; data: string }) => {
@@ -67,9 +69,17 @@ export function Scanner({ preset }: { preset?: string }) {
       handledRef.current = true;
 
       if (activeMethod === 'text') {
+        if (!isOcrAvailable()) {
+          setOcrUnavailable(true);
+          return;
+        }
         try {
-          const result = await recognizeText(photo.uri);
-          const firstLine = result.text
+          const text = await recognizeTextSafe(photo.uri);
+          if (text === null) {
+            setOcrUnavailable(true);
+            return;
+          }
+          const firstLine = text
             .split('\n')
             .map((l) => l.trim())
             .find((l) => l.length > 0);
@@ -169,13 +179,20 @@ export function Scanner({ preset }: { preset?: string }) {
               <Pressable
                 style={styles.shutterButton}
                 onPress={handleCapture}
-                disabled={isCapturing}
+                disabled={isCapturing || ocrUnavailable}
               >
                 <View style={styles.shutterRing}>
-                  <View style={[styles.shutterCore, isCapturing && styles.shutterCoreBusy]} />
+                  <View style={[styles.shutterCore, (isCapturing || ocrUnavailable) && styles.shutterCoreBusy]} />
                 </View>
               </Pressable>
             )}
+          {ocrUnavailable && (
+            <View style={styles.ocrWarning}>
+              <Text style={styles.ocrWarningText}>
+                OCR requires a native build — not available in Expo Go. Try Visual Match instead.
+              </Text>
+            </View>
+          )}
           {activeMethod && (
             <Pressable
               style={styles.openModalButton}
@@ -214,7 +231,9 @@ export function Scanner({ preset }: { preset?: string }) {
               <Text style={styles.optionIcon}>🔤</Text>
               <View style={styles.optionInfo}>
                 <Text style={styles.optionTitle}>Text / OCR</Text>
-                <Text style={styles.optionDesc}>Read title from cover</Text>
+                <Text style={styles.optionDesc}>
+                  {isOcrAvailable() ? 'Read title from cover' : 'Requires a native build (not in Expo Go)'}
+                </Text>
               </View>
             </Pressable>
 
@@ -289,6 +308,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   shutterCoreBusy: { backgroundColor: theme.accent.warm },
+  ocrWarning: {
+    position: 'absolute',
+    bottom: 132,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    maxWidth: 300,
+  },
+  ocrWarningText: { color: theme.accent.warm, fontSize: 12, fontWeight: '600', textAlign: 'center' },
   openModalButton: {
     position: 'absolute',
     bottom: 48,
