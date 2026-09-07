@@ -208,10 +208,15 @@ export function Scanner({ preset }: { preset?: string }) {
             pathname: '/scanner/results',
             params: { method: 'embedding', photo: photo.uri },
           });
-        } catch {
+        } catch (err) {
           router.push({
             pathname: '/scanner/results',
-            params: { method: 'embedding', photo: photo.uri, failed: '1' },
+            params: {
+              method: 'embedding',
+              photo: photo.uri,
+              failed: '1',
+              error: err instanceof Error ? err.message : String(err),
+            },
           });
         }
         return;
@@ -370,7 +375,8 @@ export function Scanner({ preset }: { preset?: string }) {
       {ocrUnavailable && (
         <View style={styles.ocrWarning}>
           <Text style={styles.ocrWarningText}>
-            OCR requires a native build — not available in Expo Go. Try Visual Match instead.
+            No text was detected. Make sure the embeddings service (port 8700)
+            is reachable from your phone and cover is well-lit, then try again.
           </Text>
         </View>
       )}

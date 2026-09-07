@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { ocrPhoto } from '@/services/embeddings';
 
 interface OcrResponse {
   text: string;
@@ -31,15 +32,24 @@ function getOcr(): ((uri: string) => Promise<OcrResponse>) | null {
 }
 
 export function isOcrAvailable(): boolean {
-  return getOcr() !== null;
+  // Native mlkit (dev/prod builds) OR remote EasyOCR via the embeddings
+  // service, which is what Expo Go relies on.
+  return getOcr() !== null || isExpoGo();
 }
 
 export async function recognizeTextSafe(uri: string): Promise<string | null> {
   const fn = getOcr();
-  if (!fn) return null;
+  if (fn) {
+    try {
+      const result = await fn(uri);
+      return result.text ?? '';
+    } catch {
+      return null;
+    }
+  }
+  // Expo Go: fall back to the server-side EasyOCR endpoint.
   try {
-    const result = await fn(uri);
-    return result.text ?? '';
+    return await ocrPhoto(uri);
   } catch {
     return null;
   }

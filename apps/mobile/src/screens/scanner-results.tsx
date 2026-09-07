@@ -33,12 +33,13 @@ const methodLabel: Record<string, string> = {
 export function ScannerResults() {
   const router = useRouter();
   const [isImportMode, setIsImportMode] = useState(false);
-  const { method, value, photo, failed } = useLocalSearchParams<{
+  const { method, value, photo, failed, error } = useLocalSearchParams<{
     method: string;
     value?: string;
     photo?: string;
     type?: string;
     failed?: string;
+    error?: string;
   }>();
 
   const embedding = photo ? getEmbedding(photo) : undefined;
@@ -103,7 +104,9 @@ export function ScannerResults() {
           <Text style={styles.stateIcon}>🧠</Text>
           <Text style={styles.stateTitle}>Could not analyze the cover</Text>
           <Text style={styles.stateText}>
-            The embedding service is offline. Try again from the scanner.
+            {error
+              ? `Error: ${error}`
+              : 'The embedding service is offline. Try again from the scanner.'}
           </Text>
         </View>
       );
