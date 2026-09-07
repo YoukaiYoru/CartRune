@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
@@ -17,8 +18,9 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     transform: [{ scale: scale.value }],
   }));
 
-  if (focused) scale.value = withSpring(1.1, { damping: 12, stiffness: 300 });
-  else scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+  useEffect(() => {
+    scale.value = withSpring(focused ? 1.1 : 1, { damping: 12, stiffness: 300 });
+  }, [focused, scale]);
 
   const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
     Home: 'home',

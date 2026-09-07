@@ -20,6 +20,7 @@ import {
 } from '@/hooks/useScreenscraper';
 import { ScreenHeader } from '@/components/screen-header';
 import { theme } from '@/theme';
+import type { ScanResponse } from '@/services/types';
 
 const methodLabel: Record<string, string> = {
   barcode: 'Barcode Scan',
@@ -49,9 +50,13 @@ export function ScannerResults() {
           ? () => matchEmbedding(embedding)
           : null;
 
+  const noopFn: () => Promise<ScanResponse> = async () => ({
+    matches: [],
+    method: 'none',
+  });
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['scanner', method, value ?? photo],
-    queryFn: scanFn!,
+    queryFn: scanFn ?? noopFn,
     enabled: !!scanFn,
     retry: 1,
   });

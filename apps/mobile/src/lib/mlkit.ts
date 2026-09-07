@@ -1,3 +1,5 @@
+import { NativeModules } from 'react-native';
+
 interface OcrResponse {
   text: string;
 }
@@ -6,6 +8,12 @@ let cached: ((uri: string) => Promise<OcrResponse>) | null | undefined;
 
 function getOcr(): ((uri: string) => Promise<OcrResponse>) | null {
   if (cached !== undefined) return cached;
+  // Native module check first: never throws, so this is safe to call during
+  // render even in Expo Go where expo-mlkit-ocr is not bundled.
+  if (NativeModules.ExpoMlkitOcr === undefined) {
+    cached = null;
+    return cached;
+  }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require('expo-mlkit-ocr');
@@ -23,6 +31,10 @@ export function isOcrAvailable(): boolean {
 export async function recognizeTextSafe(uri: string): Promise<string | null> {
   const fn = getOcr();
   if (!fn) return null;
-  const result = await fn(uri);
-  return result.text ?? '';
+  try {
+    const result = await fn(uri);
+    return result.text ?? '';
+  } catch {
+    return null;
+  }
 }
