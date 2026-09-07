@@ -1,16 +1,22 @@
-import { NativeModules } from 'react-native';
+import Constants from 'expo-constants';
 
 interface OcrResponse {
   text: string;
+}
+
+// expo-mlkit-ocr ships a native module, so it can never work inside the Expo
+// Go client. Detect it deterministically before ever requiring the module: a
+// bare require() of a missing native module throws in a way that still trips
+// the LogBox error boundary even when wrapped in try/catch.
+function isExpoGo(): boolean {
+  return Constants.executionEnvironment === 'storeClient';
 }
 
 let cached: ((uri: string) => Promise<OcrResponse>) | null | undefined;
 
 function getOcr(): ((uri: string) => Promise<OcrResponse>) | null {
   if (cached !== undefined) return cached;
-  // Native module check first: never throws, so this is safe to call during
-  // render even in Expo Go where expo-mlkit-ocr is not bundled.
-  if (NativeModules.ExpoMlkitOcr === undefined) {
+  if (isExpoGo()) {
     cached = null;
     return cached;
   }
