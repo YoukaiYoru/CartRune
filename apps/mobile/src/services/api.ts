@@ -2,7 +2,8 @@ import { Platform } from 'react-native';
 import axios from 'axios';
 import { tokenStorage } from '@/services/auth';
 
-const HOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+const FALLBACK_HOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+const HOST = process.env.EXPO_PUBLIC_API_HOST || FALLBACK_HOST;
 const API_BASE = `http://${HOST}:8080/api/v1`;
 
 export const api = axios.create({

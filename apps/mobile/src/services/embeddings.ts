@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
-const HOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+const FALLBACK_HOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+const HOST = process.env.EXPO_PUBLIC_API_HOST || FALLBACK_HOST;
 const EMBEDDINGS_BASE = `http://${HOST}:8700`;
 
 interface EmbedResponse {
