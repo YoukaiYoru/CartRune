@@ -17,7 +17,9 @@ import { MatchCard } from '@/components/match-card';
 import {
   useScreenScraperSearch,
   useImportScreenScraperGame,
+  useScreenScraperMediaForTitle,
 } from '@/hooks/useScreenscraper';
+import { MediaGallery } from '@/components/media-gallery';
 import { ScreenHeader } from '@/components/screen-header';
 import { theme } from '@/theme';
 import type { ScanResponse } from '@/services/types';
@@ -63,6 +65,14 @@ export function ScannerResults() {
 
   const results = data?.matches ?? [];
   const methodKey = method ?? 'barcode';
+
+  // Auto-resolve ScreenScraper media for the top detected title so a gallery
+  // (covers, screenshots, logos, videos) shows right after a successful scan.
+  const autoTitle = results[0]?.title || (method === 'text' ? value : undefined) || null;
+  const { data: mediaDetail, isLoading: mediaLoading } = useScreenScraperMediaForTitle(
+    autoTitle,
+    !!data && autoTitle !== null
+  );
 
   const renderState = () => {
     if (isLoading) {
@@ -182,6 +192,7 @@ export function ScannerResults() {
             contentContainerStyle={styles.list}
             renderItem={({ item }) => <MatchCard item={item} />}
           />
+          {mediaDetail ? <MediaGallery detail={mediaDetail} isLoading={mediaLoading} /> : null}
         </>
       ) : isImportMode ? (
         <ImportPanel

@@ -207,6 +207,7 @@ export interface ScreenScraperDetail {
   filtered_out?: boolean;
   cover_url?: string;
   covers?: { key: string; url: string; kind?: string; region?: string }[];
+  media?: { key: string; url: string; kind?: string; region?: string }[];
 }
 
 export interface ImportResponse {

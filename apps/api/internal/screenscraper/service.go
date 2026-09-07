@@ -73,9 +73,23 @@ func (s *Service) Detail(ctx context.Context, gameID int, region, language strin
 	}
 	res.Official, res.FilteredOut = g.OfficialContent()
 
-	// All image covers grouped by media token for review/testing; URLs point
-	// to the media proxy so ScreenScraper credentials never reach clients.
+	// All media exposed through the proxy for the game: images AND videos.
+	// Grouped by coarse kind (2d/3d/screenshot/logo/video/...) so clients can
+	// render a media gallery without knowing every ScreenScraper token. URLs
+	// point to the media proxy so credentials never reach clients.
 	systemID := atoi(g.Systeme.ID)
+	for i := range g.Medias {
+		m := &g.Medias[i]
+		res.Media = append(res.Media, MediaData{
+			Key:    m.Type,
+			URL:    media.GameMediaPath(systemID, g.IDInt(), m.Token()),
+			Kind:   mediaKind(m.Type),
+			Region: m.Region,
+		})
+	}
+
+	// Image covers grouped by media token for review/testing; URLs point
+	// to the media proxy so ScreenScraper credentials never reach clients.
 	for i := range g.Medias {
 		m := &g.Medias[i]
 		if !isImageMedia(m) {
@@ -219,6 +233,33 @@ func coverKind(key string) string {
 	case strings.Contains(key, "2d"):
 		return "2d"
 	case strings.Contains(key, "texture"):
+		return "texture"
+	}
+	return "other"
+}
+
+// mediaKind classifies any ScreenScraper media token (images and videos) into
+// a coarse kind consumable by the mobile media gallery.
+func mediaKind(key string) string {
+	t := strings.ToLower(strings.TrimSpace(key))
+	switch {
+	case strings.Contains(t, "video"):
+		return "video"
+	case strings.Contains(t, "screenshot"):
+		return "screenshot"
+	case strings.Contains(t, "logo"):
+		return "logo"
+	case strings.Contains(t, "fanart"):
+		return "fanart"
+	case strings.Contains(t, "wheel"):
+		return "wheel"
+	case strings.Contains(t, "manuel"):
+		return "manual"
+	case strings.Contains(t, "3d"):
+		return "3d"
+	case strings.Contains(t, "2d"):
+		return "2d"
+	case strings.Contains(t, "texture"):
 		return "texture"
 	}
 	return "other"

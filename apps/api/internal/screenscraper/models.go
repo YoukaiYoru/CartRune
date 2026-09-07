@@ -31,6 +31,17 @@ type CoverData struct {
 	Region string `json:"region,omitempty"`
 }
 
+// MediaData represents any piece of media belonging to a game: images (box
+// front/3D, screenshots, logos, fanart, ...) or videos. Kind is a coarse
+// classification ("2d", "3d", "screenshot", "logo", "video", ...) so clients
+// can render or filter without knowing every ScreenScraper token.
+type MediaData struct {
+	Key    string `json:"key"`
+	URL    string `json:"url"`
+	Kind   string `json:"kind,omitempty"`
+	Region string `json:"region,omitempty"`
+}
+
 // DetailResponse is the normalized output of GET /screenscraper/games/:id.
 type DetailResponse struct {
 	GameID      int         `json:"game_id"`
@@ -47,6 +58,7 @@ type DetailResponse struct {
 	FilteredOut string      `json:"filtered_out,omitempty"`
 	CoverURL    string      `json:"cover_url,omitempty"`
 	Covers      []CoverData `json:"covers,omitempty"`
+	Media       []MediaData `json:"media,omitempty"`
 }
 
 // ImportResponse is the output of POST /screenscraper/games/:id/import.
