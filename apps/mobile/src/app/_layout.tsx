@@ -40,22 +40,19 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: '#0a0a0a' },
         }}
       >
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="scanner/results" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="game/[id]" />
-            <Stack.Screen name="game/[id]/reviews" />
-            <Stack.Screen name="review/new" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="profile/edit" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="feed/index" />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="login" />
-            <Stack.Screen name="register" />
-          </>
-        )}
+        <Stack.Protected guard={isAuthenticated}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="scanner/results" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="game/[id]" />
+          <Stack.Screen name="game/[id]/reviews" />
+          <Stack.Screen name="review/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="profile/edit" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="feed/index" />
+        </Stack.Protected>
+        <Stack.Protected guard={!isAuthenticated}>
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+        </Stack.Protected>
       </Stack>
     </QueryClientProvider>
   );
