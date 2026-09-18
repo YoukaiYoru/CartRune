@@ -178,6 +178,15 @@ export interface ScanResponse {
   method: string;
 }
 
+export interface CoverAnalysis {
+  title: string;
+  console: string;
+  region: string;
+  edition: string;
+  publisher: string;
+  query: string;
+}
+
 export interface SearchItem {
   game_id: string;
   title: string;

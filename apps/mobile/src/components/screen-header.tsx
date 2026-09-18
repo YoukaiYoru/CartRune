@@ -14,31 +14,32 @@ export function ScreenHeader({ title, showBack = false, rightAction }: ScreenHea
 
   return (
     <View style={styles.header}>
-      {showBack ? (
-        <TouchableOpacity
-          style={styles.backButton}
+      <View style={styles.sideSlot}>
+        {showBack ? (
+          <TouchableOpacity
+            style={styles.backButton}
           onPress={() => router.back()}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={20} color={theme.accent.warm} />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.placeholder} />
-      )}
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={20} color={theme.accent.warm} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
       <Text style={styles.title}>{title}</Text>
-      {rightAction ? (
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={rightAction.onPress}
-          accessibilityRole="button"
-        >
-          <Text style={styles.action}>{rightAction.label}</Text>
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.placeholder} />
-      )}
+      <View style={[styles.sideSlot, styles.rightSlot]}>
+        {rightAction ? (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={rightAction.onPress}
+            accessibilityRole="button"
+            accessibilityLabel={rightAction.label}
+          >
+            <Text style={styles.action}>{rightAction.label}</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -52,6 +53,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
+  sideSlot: { width: 80, minHeight: 34, justifyContent: 'center' },
+  rightSlot: { alignItems: 'flex-end' },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -66,5 +69,4 @@ const styles = StyleSheet.create({
     backgroundColor: theme.bg.elevated,
     borderRadius: 8,
   },
-  placeholder: { width: 80 },
 });

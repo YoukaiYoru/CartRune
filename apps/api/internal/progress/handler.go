@@ -32,6 +32,9 @@ func (h *Handler) UpdateProgress(c fiber.Ctx) error {
 		if err.Error() == "game not found in any library" {
 			return response.Error(c, fiber.StatusNotFound, err.Error())
 		}
+		if err.Error() == "invalid status" || err.Error() == "progress must be between 0 and 100" || err.Error() == "hours played cannot be negative" {
+			return response.Error(c, fiber.StatusBadRequest, err.Error())
+		}
 		return response.Error(c, fiber.StatusInternalServerError, "failed to update progress")
 	}
 

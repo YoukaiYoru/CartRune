@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import type { MatchResult } from '@/services/types';
 import { usePrimaryLibrary, useAddGameToLibrary } from '@/hooks/useCollections';
 import { theme } from '@/theme';
+import { resolveApiUrl } from '@/services/api';
 
 interface Props {
   item: MatchResult;
@@ -36,7 +37,7 @@ export function MatchCard({ item, defaultStatus = 'backlog' }: Props) {
         onPress={() => router.push(`/game/${item.game_id}`)}
       >
         {item.cover_url ? (
-          <Image source={{ uri: item.cover_url }} style={styles.cover} />
+          <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.cover} />
         ) : (
           <View style={styles.coverPlaceholder}>
             <Text style={styles.coverText}>🎮</Text>
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     backgroundColor: theme.accent.warm,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 999,
     alignItems: 'center',
   },
   addButtonDone: { backgroundColor: theme.bg.surface },

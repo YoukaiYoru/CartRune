@@ -11,6 +11,11 @@ services:
       POSTGRES_DB: cartrune
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cartrune"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   qdrant:
     image: qdrant/qdrant:v1.14.1
@@ -21,7 +26,99 @@ services:
       - "6334:6334"
     volumes:
       - qdrantdata:/qdrant/storage
+    healthcheck:
+      # The minimal Qdrant image has no wget/curl. Check that its main process
+      # is alive; readiness is additionally verified from the host by scripts.
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  embeddings:
+    build:
+      context: ./apps/embeddings
+    restart: unless-stopped
+    ports:
+      - "8700:8700"
+    environment:
+      VLLM_ENABLED: ${VLLM_ENABLED:-1}
+      VLLM_BASE_URL: ${VLLM_BASE_URL:-http://host.docker.internal:8000/v1}
+      VLLM_MODEL: ${VLLM_MODEL:-Qwen2-VL-7B-Instruct}
+      VLLM_API_KEY: ${VLLM_API_KEY:-}
+      VLLM_TIMEOUT: ${VLLM_TIMEOUT:-120}
+      VLLM_MAX_TOKENS: ${VLLM_MAX_TOKENS:-96}
+      HF_HOME: /root/.cache/huggingface
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - hfdata:/root/.cache/huggingface
+      - ./apps/embeddings/models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8700/health')"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  api:
+    build:
+      context: ./apps/api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      embeddings:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      SERVER_PORT: 8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-cartrune}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      TLS_CERT_FILE: ${TLS_CERT_FILE:-}
+      TLS_KEY_FILE: ${TLS_KEY_FILE:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      EMBEDDINGS_URL: http://embeddings:8700
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6334
+      SS_DEVID: ${SS_DEVID:-}
+      SS_DEVPASSWORD: ${SS_DEVPASSWORD:-}
+      SS_SOFTNAME: ${SS_SOFTNAME:-CartRune}
+      SS_USERID: ${SS_USERID:-}
+      SS_USERPASSWORD: ${SS_USERPASSWORD:-}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  indexer:
+    build:
+      context: ./apps/embeddings
+    profiles: ["index"]
+    depends_on:
+      api:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${DB_USER:-postgres}
+      PGPASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATABASE: ${DB_NAME:-cartrune}
+      QDRANT_URL: http://qdrant:6333
+      MEDIA_BASE_URL: http://api:8080
+    command: ["python", "index_covers.py"]
 
 volumes:
   pgdata:
   qdrantdata:
+  hfdata:

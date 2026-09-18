@@ -6,7 +6,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
+	"github.com/YoukaiYoru/api/internal/observability"
 	"github.com/qdrant/go-client/qdrant"
 )
 
@@ -41,15 +43,17 @@ type Point struct {
 
 // Service wraps the Qdrant client and the catalog-aware operations on top.
 type Service struct {
-	client *qdrant.Client
+	client  *qdrant.Client
+	metrics *observability.Recorder
 }
 
 // Options configures the Qdrant connection.
 type Options struct {
-	Host   string
-	Port   int
-	APIKey string
-	Dims   int
+	Host    string
+	Port    int
+	APIKey  string
+	Dims    int
+	Metrics *observability.Recorder
 }
 
 // NewService builds the Service. The connection is lazy: the first real call
@@ -69,9 +73,9 @@ func NewService(opt Options) *Service {
 	if err != nil {
 		// Client construction only prepares the pool; surface a descriptive
 		// error at use time rather than crashing the server on boot.
-		return &Service{client: nil}
+		return &Service{client: nil, metrics: opt.Metrics}
 	}
-	return &Service{client: client}
+	return &Service{client: client, metrics: opt.Metrics}
 }
 
 // Healthy reports whether Qdrant is reachable.
@@ -124,12 +128,12 @@ func (s *Service) Upsert(ctx context.Context, points []Point) error {
 			Id:      qdrant.NewID(p.ID),
 			Vectors: qdrant.NewVectorsDense(p.Vector),
 			Payload: qdrant.NewValueMap(map[string]any{
-				"game_id":     p.GameID,
-				"release_id":  p.ReleaseID,
-				"title":       p.Title,
-				"platform":    p.Platform,
-				"region":      p.Region,
-				"cover_url":   p.CoverURL,
+				"game_id":    p.GameID,
+				"release_id": p.ReleaseID,
+				"title":      p.Title,
+				"platform":   p.Platform,
+				"region":     p.Region,
+				"cover_url":  p.CoverURL,
 			}),
 		})
 	}
@@ -170,7 +174,17 @@ func (s *Service) Stats(ctx context.Context) (Stats, error) {
 }
 
 // Search returns the nearest cover embeddings to the given vector.
-func (s *Service) Search(ctx context.Context, vector []float32, limit int, scoreThreshold float32) ([]Match, error) {
+func (s *Service) Search(ctx context.Context, vector []float32, limit int, scoreThreshold float32) (matches []Match, err error) {
+	started := time.Now()
+	if s.metrics != nil {
+		defer func() {
+			status := 200
+			if err != nil {
+				status = 503
+			}
+			s.metrics.RecordDependency(ctx, "qdrant", "search", err == nil, status, time.Since(started), "")
+		}()
+	}
 	if s.client == nil {
 		return nil, ErrUnavailable
 	}
@@ -188,7 +202,7 @@ func (s *Service) Search(ctx context.Context, vector []float32, limit int, score
 		return nil, fmt.Errorf("vector: search: %w", err)
 	}
 
-	matches := make([]Match, 0, len(res))
+	matches = make([]Match, 0, len(res))
 	for _, sc := range res {
 		payload := sc.GetPayload()
 		m := Match{

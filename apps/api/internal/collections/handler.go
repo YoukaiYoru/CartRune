@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/YoukaiYoru/api/internal/media"
+	"github.com/YoukaiYoru/api/internal/models"
 	"github.com/YoukaiYoru/api/pkg/middleware"
 	"github.com/YoukaiYoru/api/pkg/response"
 	"github.com/gofiber/fiber/v3"
@@ -35,7 +36,7 @@ func (h *Handler) ListLibraries(c fiber.Ctx) error {
 			Name:        lib.Name,
 			Description: lib.Description,
 			IsPublic:    lib.IsPublic,
-			GamesCount:  0, // Will be filled from relation
+			GamesCount:  len(lib.Games),
 			CreatedAt:   lib.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		})
 	}
@@ -84,26 +85,34 @@ func (h *Handler) GetLibrary(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusInternalServerError, "failed to get library")
 	}
 
-	resp := LibraryDetailResponse{
-		LibraryResponse: LibraryResponse{
-			ID:          lib.ID.String(),
-			UserID:      lib.UserID.String(),
-			Name:        lib.Name,
-			Description: lib.Description,
-			IsPublic:    lib.IsPublic,
-			GamesCount:  len(lib.Games),
-			CreatedAt:   lib.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		},
-	}
+	return response.Success(c, buildLibraryDetail(lib))
+}
 
-	for _, lg := range lib.Games {
-		gameResp := LibraryGameResponse{
-			GameID:      lg.GameID.String(),
-			Status:      lg.Status,
-			Progress:    lg.Progress,
-			HoursPlayed: lg.HoursPlayed,
-			AddedAt:     lg.AddedAt.Format("2006-01-02T15:04:05Z"),
+func (h *Handler) GetPublicLibrary(c fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid library id")
+	}
+	lib, err := h.service.GetPublicLibrary(id)
+	if err != nil {
+		if err.Error() == "library not found" {
+			return response.Error(c, fiber.StatusNotFound, err.Error())
 		}
+		return response.Error(c, fiber.StatusInternalServerError, "failed to get public library")
+	}
+	return response.Success(c, buildLibraryDetail(lib))
+}
+
+func buildLibraryDetail(lib *models.Library) LibraryDetailResponse {
+	resp := LibraryDetailResponse{LibraryResponse: LibraryResponse{
+		ID: lib.ID.String(), UserID: lib.UserID.String(), Name: lib.Name,
+		Description: lib.Description, IsPublic: lib.IsPublic,
+		GamesCount: len(lib.Games), CreatedAt: lib.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}}
+	for _, lg := range lib.Games {
+		gameResp := LibraryGameResponse{GameID: lg.GameID.String(), Status: lg.Status,
+			Progress: lg.Progress, HoursPlayed: lg.HoursPlayed,
+			AddedAt: lg.AddedAt.Format("2006-01-02T15:04:05Z")}
 		if lg.ReleaseID != nil {
 			s := lg.ReleaseID.String()
 			gameResp.ReleaseID = &s
@@ -116,10 +125,8 @@ func (h *Handler) GetLibrary(c fiber.Ctx) error {
 			s := lg.CompletedAt.Format("2006-01-02T15:04:05Z")
 			gameResp.CompletedAt = &s
 		}
-		if lg.Game.Title != "" {
-			gameResp.Title = lg.Game.Title
-		}
-		if lg.Release != nil && lg.Release.Platform.Name != "" {
+		gameResp.Title = lg.Game.Title
+		if lg.Release != nil {
 			gameResp.Platform = lg.Release.Platform.Name
 		}
 		if cv := media.PrimaryCover(lg.Game.Covers); cv != nil {
@@ -127,8 +134,7 @@ func (h *Handler) GetLibrary(c fiber.Ctx) error {
 		}
 		resp.Games = append(resp.Games, gameResp)
 	}
-
-	return response.Success(c, resp)
+	return resp
 }
 
 func (h *Handler) UpdateLibrary(c fiber.Ctx) error {
@@ -207,6 +213,9 @@ func (h *Handler) AddGame(c fiber.Ctx) error {
 			return response.Error(c, fiber.StatusForbidden, err.Error())
 		}
 		if err.Error() == "invalid game id" {
+			return response.Error(c, fiber.StatusBadRequest, err.Error())
+		}
+		if err.Error() == "game not found" || err.Error() == "release not found" || err.Error() == "invalid release id" || err.Error() == "invalid status" {
 			return response.Error(c, fiber.StatusBadRequest, err.Error())
 		}
 		return response.Error(c, fiber.StatusInternalServerError, "failed to add game")

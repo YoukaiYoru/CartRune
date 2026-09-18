@@ -5,12 +5,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,12 +18,11 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Options configures the media proxy service.
 type Options struct {
-	CacheDir string // directory where fetched images are cached on disk
-
 	// ScreenScraper developer credentials (kept server-side only).
 	DevID        string
 	DevPassword  string
@@ -32,7 +31,6 @@ type Options struct {
 	UserPassword string
 
 	// MinDelay throttles calls to ScreenScraper between media downloads.
-	// The disk cache prevents repeat traffic once an image has been fetched.
 	MinDelay time.Duration
 
 	// RateLimit and RateWindow control the per-IP request cap for the public
@@ -46,10 +44,10 @@ type Options struct {
 
 // Service proxies ScreenScraper media (box art, 3D boxes, logos, ...) to the
 // CartRune clients without ever exposing the ScreenScraper credentials that
-// are embedded in the original media URLs. Images are cached on disk.
+// are embedded in the original media URLs. Media is streamed and never
+// persisted by this service.
 type Service struct {
-	cacheDir string
-	db       *gorm.DB
+	db *gorm.DB
 
 	devID    string
 	devPass  string
@@ -83,7 +81,6 @@ func NewService(opts Options) *Service {
 		opts.RateWindow = time.Minute
 	}
 	return &Service{
-		cacheDir:   opts.CacheDir,
 		db:         opts.DB,
 		devID:      opts.DevID,
 		devPass:    opts.DevPassword,
@@ -107,6 +104,16 @@ func (s *Service) RateLimit() fiber.Handler {
 			return c.Next()
 		}
 		ip := c.IP()
+		if s.db != nil {
+			allowed, err := s.consumeDistributedLimit(c.Context(), ip)
+			if err != nil {
+				return fiber.NewError(fiber.StatusServiceUnavailable, "rate limiter unavailable")
+			}
+			if !allowed {
+				return fiber.NewError(fiber.StatusTooManyRequests, "too many media requests")
+			}
+			return c.Next()
+		}
 		now := time.Now()
 
 		s.rlMu.Lock()
@@ -122,6 +129,34 @@ func (s *Service) RateLimit() fiber.Handler {
 		s.rlMu.Unlock()
 		return c.Next()
 	}
+}
+
+func (s *Service) consumeDistributedLimit(ctx context.Context, ip string) (bool, error) {
+	digest := sha256.Sum256([]byte(ip))
+	key := "media:" + hex.EncodeToString(digest[:])
+	now := time.Now()
+	allowed := false
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var bucket models.RateLimitBucket
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&bucket, "key = ?", key).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			bucket = models.RateLimitBucket{Key: key, WindowStartedAt: now, Count: 1}
+			allowed = true
+			return tx.Create(&bucket).Error
+		}
+		if err != nil {
+			return err
+		}
+		if now.Sub(bucket.WindowStartedAt) >= s.rlWindow {
+			bucket.WindowStartedAt = now
+			bucket.Count = 1
+		} else {
+			bucket.Count++
+		}
+		allowed = bucket.Count <= s.rlLimit
+		return tx.Save(&bucket).Error
+	})
+	return allowed, err
 }
 
 // ServeCover handles GET /media/covers/:id for a persisted cover.
@@ -158,9 +193,22 @@ func (s *Service) ServeGameMedia(c fiber.Ctx) error {
 	if mediaKey == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "media query parameter is required")
 	}
+	if !allowedMediaKey(mediaKey) {
+		return fiber.NewError(fiber.StatusBadRequest, "unsupported media type")
+	}
 
 	u := s.buildGameURL(systemID, gameID, mediaKey)
 	return s.serve(c, u)
+}
+
+func allowedMediaKey(key string) bool {
+	key = strings.ToLower(strings.TrimSpace(key))
+	for _, prefix := range []string{"box-2d", "box-3d", "box-texture", "support-2d", "support-texture", "fanart", "wheel", "screenshot", "logo"} {
+		if strings.HasPrefix(key, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // CleanupStoredURLs removes the ScreenScraper credentials that may have been
@@ -219,22 +267,11 @@ func (s *Service) fillCreds(q url.Values) {
 	}
 }
 
-// serve fetches (or reads from cache) the media behind url and streams it to
-// the client as an image.
+// serve fetches the media behind url and streams it to the client. The body is
+// held only transiently in memory for validation; it is never written to disk
+// or persisted in the database.
 func (s *Service) serve(c fiber.Ctx, mediaURL string) error {
 	ctx := c.Context() // standard library context in Fiber v3
-
-	hash := sha256.Sum256([]byte(mediaURL))
-	cacheKey := hex.EncodeToString(hash[:])
-	bodyPath := filepath.Join(s.cacheDir, cacheKey)
-	ctypePath := bodyPath + ".ctype"
-
-	// Fast path: already cached on disk.
-	body, ctype, err := readCached(bodyPath, ctypePath)
-	if err == nil {
-		c.Set(fiber.HeaderContentType, ctype)
-		return c.Send(body)
-	}
 
 	s.throttle()
 
@@ -258,23 +295,23 @@ func (s *Service) serve(c fiber.Ctx, mediaURL string) error {
 		return fiber.NewError(fiber.StatusBadGateway, "media fetch failed")
 	}
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024+1))
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadGateway, "failed to read media")
+	}
+	if len(data) > 10*1024*1024 {
+		return fiber.NewError(fiber.StatusBadGateway, "media response too large")
 	}
 	if isNoMedia(data) {
 		return fiber.NewError(fiber.StatusNotFound, "media not found")
 	}
 
-	ctype = resp.Header.Get("Content-Type")
+	ctype := resp.Header.Get("Content-Type")
 	if ctype == "" {
 		ctype = http.DetectContentType(data)
 	}
-
-	// Persist to the on-disk cache for subsequent requests.
-	if err := os.MkdirAll(s.cacheDir, 0o755); err == nil {
-		_ = os.WriteFile(bodyPath, data, 0o644)
-		_ = os.WriteFile(ctypePath, []byte(ctype), 0o644)
+	if !strings.HasPrefix(strings.ToLower(ctype), "image/") && !strings.HasPrefix(strings.ToLower(ctype), "video/") {
+		return fiber.NewError(fiber.StatusBadGateway, "unsupported media content type")
 	}
 
 	c.Set(fiber.HeaderContentType, ctype)
@@ -288,18 +325,6 @@ func (s *Service) throttle() {
 		time.Sleep(s.minDelay - since)
 	}
 	s.lastReq = time.Now()
-}
-
-func readCached(bodyPath, ctypePath string) ([]byte, string, error) {
-	body, err := os.ReadFile(bodyPath)
-	if err != nil {
-		return nil, "", err
-	}
-	ct, err := os.ReadFile(ctypePath)
-	if err != nil {
-		return nil, "", err
-	}
-	return body, string(ct), nil
 }
 
 // isNoMedia reports whether ScreenScraper answered NOMEDIA (no media found).

@@ -2,6 +2,7 @@ package collections
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/YoukaiYoru/api/internal/models"
@@ -40,6 +41,17 @@ func (s *Service) CreateLibrary(userID uuid.UUID, req CreateLibraryRequest) (*mo
 
 func (s *Service) GetLibrary(id uuid.UUID) (*models.Library, error) {
 	lib, err := s.repo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("library not found")
+		}
+		return nil, err
+	}
+	return lib, nil
+}
+
+func (s *Service) GetPublicLibrary(id uuid.UUID) (*models.Library, error) {
+	lib, err := s.repo.FindPublicByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("library not found")
@@ -102,6 +114,17 @@ func (s *Service) AddGame(libraryID, userID uuid.UUID, req AddGameRequest) error
 	if err != nil {
 		return errors.New("invalid game id")
 	}
+	if _, err := s.repo.FindGame(gameID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("game not found")
+		}
+		return err
+	}
+	if existing, err := s.repo.FindGameInLibrary(libraryID, gameID); err == nil && existing != nil {
+		return nil
+	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
 
 	lg := &models.LibraryGame{
 		LibraryID: libraryID,
@@ -112,12 +135,22 @@ func (s *Service) AddGame(libraryID, userID uuid.UUID, req AddGameRequest) error
 
 	if req.ReleaseID != "" {
 		releaseID, err := uuid.Parse(req.ReleaseID)
-		if err == nil {
-			lg.ReleaseID = &releaseID
+		if err != nil {
+			return errors.New("invalid release id")
 		}
+		if _, err := s.repo.FindReleaseForGame(releaseID, gameID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("release not found")
+			}
+			return err
+		}
+		lg.ReleaseID = &releaseID
 	}
 
 	if req.Status != "" {
+		if !validStatus(req.Status) {
+			return fmt.Errorf("invalid status")
+		}
 		lg.Status = req.Status
 	}
 
@@ -129,6 +162,15 @@ func (s *Service) AddGame(libraryID, userID uuid.UUID, req AddGameRequest) error
 		_ = s.rec(userID, "added", gameID)
 	}
 	return nil
+}
+
+func validStatus(status string) bool {
+	switch status {
+	case "backlog", "playing", "completed", "paused", "dropped":
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *Service) RemoveGame(libraryID, userID uuid.UUID, gameID uuid.UUID) error {

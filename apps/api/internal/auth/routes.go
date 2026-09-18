@@ -11,6 +11,7 @@ func Routes(app fiber.Router, handler *Handler, jwtSecret string) {
 	auth.Post("/register", handler.Register)
 	auth.Post("/login", handler.Login)
 	auth.Post("/refresh", handler.Refresh)
+	auth.Post("/logout", handler.Logout)
 
 	// Protected route
 	app.Get("/me", middleware.JWTAuth(jwtSecret), handler.Me)

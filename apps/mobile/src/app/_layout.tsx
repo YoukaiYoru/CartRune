@@ -37,7 +37,7 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: '#0a0a0a' },
+          contentStyle: { backgroundColor: theme.bg.deep },
         }}
       >
         <Stack.Protected guard={isAuthenticated}>

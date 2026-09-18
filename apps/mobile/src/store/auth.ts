@@ -52,8 +52,14 @@ export const useAuthStore = create<AuthState>((set) => {
       await fetchUser();
     },
 
-    logout: async () => {
-      await tokenStorage.clearTokens();
+		logout: async () => {
+			const refreshToken = await tokenStorage.getRefreshToken();
+			try {
+				await api.post('/auth/logout', { refresh_token: refreshToken });
+			} catch {
+				// Local cleanup must still happen if the network is unavailable.
+			}
+			await tokenStorage.clearTokens();
       set({ user: null, isAuthenticated: false });
     },
 

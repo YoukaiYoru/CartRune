@@ -25,9 +25,33 @@ func (c *Client) SearchByName(ctx context.Context, name string, systemeID int) (
 		return nil, ErrNotFound
 	}
 	if res.Header.Error != "" {
-		return nil, ErrNotFound
+		return nil, classifyProviderError(res.Header.Error)
 	}
 	return res.Response.Jeux, nil
+}
+
+// SearchByRomName uses ScreenScraper's ROM-name lookup. It is the provider
+// supported path for barcode/serial fallback when the local catalog misses.
+func (c *Client) SearchByRomName(ctx context.Context, romName string) (*GameInfo, error) {
+	q := c.baseQuery()
+	q.Set("romnom", romName)
+	q.Set("romtype", "rom")
+
+	var res APIResponse
+	status, err := c.get(ctx, "jeuInfos.php", q, &res)
+	if err != nil {
+		return nil, err
+	}
+	if status == http.StatusNotFound {
+		return nil, ErrNotFound
+	}
+	if res.Header.Error != "" {
+		return nil, classifyProviderError(res.Header.Error)
+	}
+	if res.Response.Jeu == nil {
+		return nil, ErrNotFound
+	}
+	return res.Response.Jeu, nil
 }
 
 // GameDetail calls jeuInfos.php forcing the search by numeric game id.
@@ -44,7 +68,7 @@ func (c *Client) GameDetail(ctx context.Context, gameID int) (*GameInfo, error) 
 		return nil, ErrNotFound
 	}
 	if res.Header.Error != "" {
-		return nil, ErrNotFound
+		return nil, classifyProviderError(res.Header.Error)
 	}
 	if res.Response.Jeu == nil {
 		return nil, ErrNotFound

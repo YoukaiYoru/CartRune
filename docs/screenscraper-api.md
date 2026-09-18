@@ -17,6 +17,30 @@ referencia sobre la API v2; para la implementación concreta ver
   **nunca** se exponen al frontend (ver §8 "Media proxy").
 - `softname` identifica la aplicación (CartRune).
 - `output=json` para respuestas JSON.
+
+### Configuración runtime
+
+La API solo consulta ScreenScraper cuando recibe una búsqueda autenticada en
+`POST /api/v1/catalog/search` o una consulta de detalle/importación. Configura
+estas variables en `apps/api/.env` (nunca en el frontend):
+
+```dotenv
+SS_DEVID=
+SS_DEVPASSWORD=
+SS_SOFTNAME=CartRune
+SS_USERID=                 # opcional; mejora la cuota si está autorizado
+SS_USERPASSWORD=           # opcional
+SS_BASE_URL=https://api.screenscraper.fr/api2/
+SS_TIMEOUT=20s
+SS_MIN_DELAY=1500ms
+SS_MAX_RETRY=2
+SS_CACHE_TTL=2m
+```
+
+Las búsquedas repetidas se sirven desde una caché en memoria durante
+`SS_CACHE_TTL`; los errores transitorios (`408`, `429` y `5xx`) usan reintentos
+limitados y backoff. El cliente respeta la cancelación del request para no
+dejar goroutines o esperas bloqueadas.
 - Formato real (confirmado con llamadas en vivo):
   - Top-level: `{ "header": {...}, "response": {...} }`.
   - `noms`, `synopsis`, `dates`, `medias`, `roms` son **arrays de objetos**.
@@ -164,8 +188,8 @@ contiene `devid`/`devpassword`.
 
 Para proteger la cuota de ScreenScraper del uso indebido, el proxy aplica un
 **rate-limit por IP** (`MEDIA_RATE_LIMIT`, por defecto 60 peticiones por
-`MEDIA_RATE_WINDOW`, 1 minuto). Además, las imágenes se cachean a disco, por lo
-que cada imagen se descarga de ScreenScraper **una sola vez**.
+`MEDIA_RATE_WINDOW`, 1 minuto). Las imágenes se transmiten directamente y no se
+guardan en disco ni en la base de datos.
 
 ### Reglas
 
@@ -176,9 +200,8 @@ que cada imagen se descarga de ScreenScraper **una sola vez**.
 - Al persistir, las URLs se **sanitizan** (se eliminan `devid`, `devpassword`,
   `ssid`, `sspassword`, `softname`, `output`); el proxy las re-añade solo
   server-side al descargar.
-- Las imágenes se cachean a disco (`MEDIA_CACHE_DIR`, por defecto
-  `data/covers`), de modo que el tráfico a ScreenScraper es mínimo y el
-  cliente nunca golpea el CDN directamente.
+- Las imágenes se descargan en memoria únicamente durante la petición y se
+  transmiten al cliente; no se guardan en disco ni en la base de datos.
 - Un arranque del servidor limpia cualquier URL con credenciales que pudiera
   quedar persistida de versiones anteriores.
 

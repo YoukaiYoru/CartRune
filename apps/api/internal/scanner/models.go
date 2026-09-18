@@ -25,6 +25,7 @@ type MatchResult struct {
 }
 
 type ScanResponse struct {
-	Matches []MatchResult `json:"matches"`
-	Method  string        `json:"method"`
+	Matches  []MatchResult `json:"matches"`
+	Method   string        `json:"method"`
+	Fallback string        `json:"fallback,omitempty"`
 }

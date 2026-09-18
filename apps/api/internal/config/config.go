@@ -7,14 +7,20 @@ import (
 )
 
 type Config struct {
-	ServerPort string
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	DBSSLMode  string
-	JWTSecret  string
+	ServerPort  string
+	DBHost      string
+	DBPort      string
+	DBUser      string
+	DBPassword  string
+	DBName      string
+	DBSSLMode   string
+	JWTSecret   string
+	Environment string
+	TLSCertFile string
+	TLSKeyFile  string
+	CORSOrigins string
+	// EmbeddingsURL is internal-only; mobile clients must never call it directly.
+	EmbeddingsURL string
 
 	// ScreenScraper API credentials (see docs/screenscraper-api.md)
 	SSDevID        string
@@ -22,10 +28,11 @@ type Config struct {
 	SSSoftName     string
 	SSUserID       string
 	SSUserPassword string
-
-	// MediaCacheDir is where proxied covers are cached to disk (default
-	// ./data/covers). Client-facing cover URLs never contain credentials.
-	MediaCacheDir string
+	SSBaseURL      string
+	SSTimeout      time.Duration
+	SSMinDelay     time.Duration
+	SSMaxRetry     int
+	SSCacheTTL     time.Duration
 
 	// MediaRateLimit / MediaRateWindow cap per-IP requests on the public
 	// media proxy (defaults: 60 requests per minute).
@@ -33,35 +40,44 @@ type Config struct {
 	MediaRateWindow time.Duration
 
 	// Qdrant vector store for visual matching (gRPC port 6334).
-	QdrantHost string
-	QdrantPort int
+	QdrantHost   string
+	QdrantPort   int
 	QdrantAPIKey string
 }
 
 func Load() *Config {
 	return &Config{
-		ServerPort: getEnv("SERVER_PORT", "8080"),
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", "postgres"),
-		DBName:     getEnv("DB_NAME", "cartrune"),
-		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
-		JWTSecret:  getEnv("JWT_SECRET", "change-me-in-production"),
+		ServerPort:    getEnv("SERVER_PORT", "8080"),
+		DBHost:        getEnv("DB_HOST", "localhost"),
+		DBPort:        getEnv("DB_PORT", "5432"),
+		DBUser:        getEnv("DB_USER", "postgres"),
+		DBPassword:    getEnv("DB_PASSWORD", "postgres"),
+		DBName:        getEnv("DB_NAME", "cartrune"),
+		DBSSLMode:     getEnv("DB_SSLMODE", "disable"),
+		JWTSecret:     getEnv("JWT_SECRET", "change-me-in-production"),
+		Environment:   getEnv("APP_ENV", "development"),
+		TLSCertFile:   getEnv("TLS_CERT_FILE", ""),
+		TLSKeyFile:    getEnv("TLS_KEY_FILE", ""),
+		CORSOrigins:   getEnv("CORS_ORIGINS", "*"),
+		EmbeddingsURL: getEnv("EMBEDDINGS_URL", "http://localhost:8700"),
 
 		SSDevID:        getEnv("SS_DEVID", ""),
 		SSDevPassword:  getEnv("SS_DEVPASSWORD", ""),
 		SSSoftName:     getEnv("SS_SOFTNAME", "CartRune"),
 		SSUserID:       getEnv("SS_USERID", ""),
 		SSUserPassword: getEnv("SS_USERPASSWORD", ""),
+		SSBaseURL:      getEnv("SS_BASE_URL", "https://api.screenscraper.fr/api2/"),
+		SSTimeout:      getEnvDuration("SS_TIMEOUT", 20*time.Second),
+		SSMinDelay:     getEnvDuration("SS_MIN_DELAY", 1500*time.Millisecond),
+		SSMaxRetry:     getEnvInt("SS_MAX_RETRY", 2),
+		SSCacheTTL:     getEnvDuration("SS_CACHE_TTL", 2*time.Minute),
 
-		MediaCacheDir:   getEnv("MEDIA_CACHE_DIR", "data/covers"),
 		MediaRateLimit:  getEnvInt("MEDIA_RATE_LIMIT", 60),
 		MediaRateWindow: getEnvDuration("MEDIA_RATE_WINDOW", time.Minute),
 
-		QdrantHost:    getEnv("QDRANT_HOST", "localhost"),
-		QdrantPort:    getEnvInt("QDRANT_PORT", 6334),
-		QdrantAPIKey:  getEnv("QDRANT_API_KEY", ""),
+		QdrantHost:   getEnv("QDRANT_HOST", "localhost"),
+		QdrantPort:   getEnvInt("QDRANT_PORT", 6334),
+		QdrantAPIKey: getEnv("QDRANT_API_KEY", ""),
 	}
 }
 

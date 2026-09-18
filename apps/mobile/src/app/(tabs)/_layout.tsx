@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -35,7 +35,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
       <Ionicons
         name={iconMap[name] || 'ellipse'}
         size={20}
-        color={focused ? theme.accent.warm : theme.text.muted}
+        color={focused ? theme.accent.primary : theme.text.muted}
       />
     </AnimatedView>
   );
@@ -48,15 +48,16 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: theme.bg.card,
-          borderTopColor: theme.border.subtle,
+          borderTopColor: theme.border.default,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 6,
-          paddingTop: 6,
+          height: 82,
+          paddingBottom: 13,
+          paddingTop: 9,
         },
-        tabBarActiveTintColor: theme.accent.warm,
+        tabBarActiveTintColor: theme.accent.primary,
         tabBarInactiveTintColor: theme.text.muted,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: 2 },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 3 },
+        tabBarItemStyle: { paddingHorizontal: 2 },
       }}
     >
       <Tabs.Screen
@@ -77,6 +78,7 @@ export default function TabLayout() {
         name="scanner"
         options={{
           title: 'Scan',
+          tabBarLabel: 'Scan',
           tabBarIcon: ({ focused }) => <TabIcon name="Scanner" focused={focused} />,
         }}
       />

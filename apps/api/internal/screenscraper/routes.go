@@ -6,7 +6,9 @@ import (
 )
 
 func Routes(app fiber.Router, handler *Handler, jwtSecret string) {
-	ss := app.Group("/screenscraper", middleware.JWTAuth(jwtSecret))
+	// Provider-neutral routes: the mobile client talks to CartRune's catalog,
+	// never to a provider-named API surface.
+	ss := app.Group("/catalog", middleware.JWTAuth(jwtSecret))
 
 	ss.Post("/search", handler.Search)
 	ss.Get("/games/:id", handler.Detail)

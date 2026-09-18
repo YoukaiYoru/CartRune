@@ -11,6 +11,7 @@ import { Image } from 'expo-image';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import type { ScreenScraperDetail } from '@/services/types';
 import { theme } from '@/theme';
+import { resolveApiUrl } from '@/services/api';
 
 interface Props {
   detail: ScreenScraperDetail;
@@ -72,7 +73,7 @@ export function MediaGallery({ detail, isLoading }: Props) {
           {images.map((m, i) => (
             <Image
               key={`${m.key}-${i}`}
-              source={{ uri: m.url }}
+              source={{ uri: resolveApiUrl(m.url) }}
               style={styles.thumb}
               contentFit="cover"
             />
@@ -87,7 +88,7 @@ export function MediaGallery({ detail, isLoading }: Props) {
           contentContainerStyle={styles.videoRow}
         >
           {videos.map((m, i) => (
-            <VideoCard key={`${m.key}-${i}`} url={m.url} />
+            <VideoCard key={`${m.key}-${i}`} url={resolveApiUrl(m.url) ?? m.url} />
           ))}
         </ScrollView>
       ) : null}

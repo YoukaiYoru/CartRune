@@ -8,8 +8,7 @@ import (
 // PUBLIC (no JWT) so image URLs can be used directly by the mobile <Image>
 // component; the underlying ScreenScraper URLs are never exposed to clients
 // (credentials are re-attached only server-side at fetch time). Abuse of the
-// screenScraper quota is mitigated by the on-disk cache plus a per-IP rate
-// limit.
+// ScreenScraper quota is mitigated by a per-IP rate limit.
 func Routes(app fiber.Router, service *Service) {
 	m := app.Group("/media")
 

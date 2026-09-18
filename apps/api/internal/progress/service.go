@@ -15,6 +15,15 @@ type Service struct {
 	rec               social.ActivityRecorder
 }
 
+func validStatus(status string) bool {
+	switch status {
+	case "backlog", "playing", "completed", "paused", "dropped":
+		return true
+	default:
+		return false
+	}
+}
+
 func NewService(
 	collectionService *collections.Service,
 	collectionRepo *collections.Repository,
@@ -38,12 +47,21 @@ func (s *Service) UpdateProgress(userID, gameID uuid.UUID, req UpdateProgressReq
 		lg, err := s.collectionRepo.FindGameInLibrary(lib.ID, gameID)
 		if err == nil {
 			if req.Status != "" {
+				if !validStatus(req.Status) {
+					return nil, errors.New("invalid status")
+				}
 				lg.Status = req.Status
 			}
 			if req.Progress != nil {
+				if *req.Progress < 0 || *req.Progress > 100 {
+					return nil, errors.New("progress must be between 0 and 100")
+				}
 				lg.Progress = *req.Progress
 			}
 			if req.HoursPlayed != nil {
+				if *req.HoursPlayed < 0 {
+					return nil, errors.New("hours played cannot be negative")
+				}
 				lg.HoursPlayed = *req.HoursPlayed
 			}
 			if req.StartedAt != nil {

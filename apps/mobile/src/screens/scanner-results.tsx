@@ -22,34 +22,41 @@ import {
 import { MediaGallery } from '@/components/media-gallery';
 import { ScreenHeader } from '@/components/screen-header';
 import { theme } from '@/theme';
-import type { ScanResponse } from '@/services/types';
+import { resolveApiUrl } from '@/services/api';
+import type { CoverAnalysis, ScanResponse } from '@/services/types';
 
 const methodLabel: Record<string, string> = {
   barcode: 'Barcode Scan',
   text: 'Text / OCR',
-  embedding: 'Visual Match',
+  embedding: 'Cover Match',
 };
 
 export function ScannerResults() {
   const router = useRouter();
   const [isImportMode, setIsImportMode] = useState(false);
-  const { method, value, photo, failed, error } = useLocalSearchParams<{
+  const { method, value, photo, failed, error, analysis: analysisParam } = useLocalSearchParams<{
     method: string;
     value?: string;
     photo?: string;
     type?: string;
     failed?: string;
     error?: string;
+    analysis?: string;
   }>();
+
+  const analysis = parseAnalysis(analysisParam);
+  const analysisQuery = analysis?.query || [analysis?.title, analysis?.console, analysis?.region].filter(Boolean).join(' ');
 
   const embedding = photo ? getEmbedding(photo) : undefined;
 
   const scanFn =
     method === 'barcode' && value
       ? () => scanBarcode(value)
-      : method === 'text' && value
-        ? () => scanText(value)
-        : method === 'embedding' && embedding
+    : method === 'text' && value
+      ? () => scanText(value)
+      : method === 'embedding' && analysisQuery
+        ? () => scanText(analysisQuery, analysis?.console)
+      : method === 'embedding' && embedding
           ? () => matchEmbedding(embedding)
           : null;
 
@@ -74,6 +81,8 @@ export function ScannerResults() {
     autoTitle,
     !!data && autoTitle !== null
   );
+  const autoCatalogQuery =
+    method === 'text' && results.length === 0 && !isLoading && !isError ? value ?? null : null;
 
   const renderState = () => {
     if (isLoading) {
@@ -118,7 +127,7 @@ export function ScannerResults() {
           <Text style={styles.stateIcon}>🧠</Text>
           <Text style={styles.stateTitle}>Analyzing cover...</Text>
           <Text style={styles.stateText}>
-            Embedding not ready. Capture the cover again.
+            Cover analysis is not ready. Capture the cover again.
           </Text>
         </View>
       );
@@ -182,6 +191,8 @@ export function ScannerResults() {
         </View>
       )}
 
+      {analysis ? <AnalysisCard analysis={analysis} /> : null}
+
       {isLoading || isError || (method === 'text' && !value) || (method === 'embedding' && !embedding) || failed === '1' ? (
         <View style={styles.bodyWrap}>{renderState()}</View>
       ) : results.length > 0 ? (
@@ -197,6 +208,13 @@ export function ScannerResults() {
           />
           {mediaDetail ? <MediaGallery detail={mediaDetail} isLoading={mediaLoading} /> : null}
         </>
+      ) : autoCatalogQuery ? (
+        <ImportPanel
+          initialQuery={autoCatalogQuery}
+          onImported={() => {
+            refetch();
+          }}
+        />
       ) : isImportMode ? (
         <ImportPanel
           onImported={() => {
@@ -211,9 +229,34 @@ export function ScannerResults() {
   );
 }
 
-function ImportPanel({ onImported }: { onImported: () => void }) {
+function parseAnalysis(value?: string | string[]): CoverAnalysis | null {
+  if (!value || Array.isArray(value)) return null;
+  try {
+    const parsed = JSON.parse(value) as Partial<CoverAnalysis>;
+    if (typeof parsed.title !== 'string') return null;
+    return {
+      title: parsed.title || '', console: parsed.console || '', region: parsed.region || '',
+      edition: parsed.edition || '', publisher: parsed.publisher || '', query: parsed.query || parsed.title,
+    };
+  } catch { return null; }
+}
+
+function AnalysisCard({ analysis }: { analysis: CoverAnalysis }) {
+  const fields = [
+    ['GAME', analysis.title], ['CONSOLE', analysis.console], ['REGION', analysis.region],
+    ['EDITION', analysis.edition],
+  ].filter(([, value]) => value);
+  return (
+    <View style={styles.analysisCard}>
+      <View style={styles.analysisHeader}><View style={styles.aiBadge}><Text style={styles.aiBadgeText}>AI</Text></View><View><Text style={styles.analysisTitle}>Cover notes</Text><Text style={styles.analysisSubtitle}>Qwen found these hints</Text></View></View>
+      <View style={styles.analysisGrid}>{fields.map(([label, value]) => <View key={label} style={styles.analysisField}><Text style={styles.analysisLabel}>{label}</Text><Text style={styles.analysisValue} numberOfLines={1}>{value}</Text></View>)}</View>
+    </View>
+  );
+}
+
+function ImportPanel({ onImported, initialQuery }: { onImported: () => void; initialQuery?: string }) {
   const [query, setQuery] = useState('');
-  const [submitted, setSubmitted] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<string | null>(initialQuery ?? null);
   const { data, isLoading, isError } = useScreenScraperSearch(submitted, submitted !== null);
   const importGame = useImportScreenScraperGame();
 
@@ -222,7 +265,7 @@ function ImportPanel({ onImported }: { onImported: () => void }) {
       <View style={styles.importHead}>
         <Text style={styles.importTitle}>Not in your catalog yet?</Text>
         <Text style={styles.importSubtitle}>
-          Search the ScreenScraper database and import the physical game.
+          Search the extended catalog and import the physical game.
         </Text>
         <View style={styles.searchRow}>
           <TextInput
@@ -247,13 +290,13 @@ function ImportPanel({ onImported }: { onImported: () => void }) {
       {isLoading ? (
         <View style={styles.stateWrap}>
           <ActivityIndicator size="large" color={theme.accent.warm} />
-          <Text style={styles.stateText}>Searching ScreenScraper...</Text>
+          <Text style={styles.stateText}>Searching the extended catalog...</Text>
         </View>
       ) : isError ? (
         <View style={styles.stateWrap}>
           <Text style={styles.stateIcon}>🛰️</Text>
           <Text style={styles.stateTitle}>Search failed</Text>
-          <Text style={styles.stateText}>ScreenScraper may be unreachable.</Text>
+          <Text style={styles.stateText}>The extended catalog may be unreachable.</Text>
         </View>
       ) : submitted && data?.length ? (
         <FlatList
@@ -272,7 +315,7 @@ function ImportPanel({ onImported }: { onImported: () => void }) {
               }}
             >
               {item.cover_url ? (
-                <Image source={{ uri: item.cover_url }} style={styles.coverImage} />
+                <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.coverImage} />
               ) : (
                 <View style={styles.coverPlaceholder}>
                   <Text style={styles.coverText}>🎮</Text>
@@ -304,7 +347,7 @@ function ImportPanel({ onImported }: { onImported: () => void }) {
           <Text style={styles.stateIcon}>🗄️</Text>
           <Text style={styles.stateTitle}>Type a title to search</Text>
           <Text style={styles.stateText}>
-            Matches will be imported into your catalog and then added to your shelf.
+            Matches will be added to your catalog and then to your shelf.
           </Text>
         </View>
       )}
@@ -318,6 +361,16 @@ const styles = StyleSheet.create({
   photoWrap: { alignItems: 'center', paddingTop: 12 },
   photoPreview: { width: 96, height: 126, borderRadius: 8, backgroundColor: theme.bg.card },
   resultCount: { color: theme.text.muted, fontSize: 13, paddingHorizontal: 16, marginBottom: 10 },
+  analysisCard: { marginHorizontal: 16, marginTop: 12, marginBottom: 14, padding: 14, borderRadius: 18, backgroundColor: theme.bg.card, borderWidth: 1, borderColor: theme.accent.primary },
+  analysisHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  aiBadge: { width: 34, height: 34, borderRadius: 11, backgroundColor: theme.accent.primary, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  aiBadgeText: { color: theme.bg.deep, fontSize: 12, fontWeight: '900' },
+  analysisTitle: { color: theme.text.primary, fontSize: 14, fontWeight: '800' },
+  analysisSubtitle: { color: theme.text.muted, fontSize: 11, marginTop: 2 },
+  analysisGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  analysisField: { minWidth: '45%', flex: 1 },
+  analysisLabel: { color: theme.text.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  analysisValue: { color: theme.text.secondary, fontSize: 13, fontWeight: '700', marginTop: 3 },
   list: { paddingHorizontal: 16 },
   stateWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 32 },
   stateIcon: { fontSize: 40, marginBottom: 10, opacity: 0.7 },

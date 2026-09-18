@@ -14,6 +14,7 @@ import { useGame } from '@/hooks/useGames';
 import { usePrimaryLibrary, useAddGameToLibrary } from '@/hooks/useCollections';
 import { theme } from '@/theme';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import { resolveApiUrl } from '@/services/api';
 
 export function GameDetail({ id }: { id: string }) {
   const router = useRouter();
@@ -51,7 +52,7 @@ export function GameDetail({ id }: { id: string }) {
         <View style={styles.cover}>
           {primaryCover ? (
             <Image
-              source={{ uri: primaryCover.url }}
+              source={{ uri: resolveApiUrl(primaryCover.url) }}
               style={styles.coverImage}
               contentFit="cover"
               transition={200}
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     width: 180,
     height: 240,
     backgroundColor: theme.bg.surface,
-    borderRadius: 10,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -141,7 +142,7 @@ const styles = StyleSheet.create({
   coverImage: { width: '100%', height: '100%', backgroundColor: theme.bg.surface },
   coverEmoji: { fontSize: 56, opacity: 0.4 },
   info: { paddingHorizontal: 16 },
-  title: { color: theme.text.primary, fontSize: 22, fontWeight: '700' },
+  title: { color: theme.text.primary, fontSize: 32, lineHeight: 36, fontWeight: '700' },
   platform: { color: theme.text.muted, fontSize: 14, marginTop: 4 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 10 },
   rating: { color: theme.accent.warm, fontSize: 15, fontWeight: '700' },
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 18,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 999,
     alignItems: 'center',
   },
   addButtonDisabled: { backgroundColor: theme.accent.muted },

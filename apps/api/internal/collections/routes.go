@@ -11,7 +11,8 @@ func Routes(app fiber.Router, handler *Handler, jwtSecret string) {
 	// Protected routes
 	libs.Get("", middleware.JWTAuth(jwtSecret), handler.ListLibraries)
 	libs.Post("", middleware.JWTAuth(jwtSecret), handler.CreateLibrary)
-	libs.Get("/:id", handler.GetLibrary)
+	libs.Get("/:id", middleware.JWTAuth(jwtSecret), handler.GetLibrary)
+	app.Get("/public/libraries/:id", handler.GetPublicLibrary)
 	libs.Patch("/:id", middleware.JWTAuth(jwtSecret), handler.UpdateLibrary)
 	libs.Delete("/:id", middleware.JWTAuth(jwtSecret), handler.DeleteLibrary)
 

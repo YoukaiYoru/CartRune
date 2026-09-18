@@ -25,6 +25,9 @@ func (h *Handler) Search(c fiber.Ctx) error {
 	if req.Query == "" {
 		return response.Error(c, fiber.StatusBadRequest, "query is required")
 	}
+	if len([]rune(req.Query)) > 120 {
+		return response.Error(c, fiber.StatusBadRequest, "query is too long")
+	}
 
 	items, err := h.service.Search(c.Context(), req)
 	if err != nil {
@@ -66,9 +69,14 @@ func (h *Handler) Import(c fiber.Ctx) error {
 
 func mapScraperError(c fiber.Ctx, err error) error {
 	switch {
+	case errors.Is(err, ErrInvalidQuery):
+		return response.Error(c, fiber.StatusBadRequest, "invalid catalog query")
 	case errors.Is(err, ErrNoCredentials):
-		return response.ErrorWithDetails(c, fiber.StatusServiceUnavailable, err.Error(),
-			"set SS_DEVID / SS_DEVPASSWORD (and optionally SS_USERID / SS_USERPASSWORD) on the API")
+		return response.Error(c, fiber.StatusServiceUnavailable, "catalog provider unavailable")
+	case errors.Is(err, ErrProviderAuth):
+		return response.Error(c, fiber.StatusBadGateway, "catalog provider authentication failed")
+	case errors.Is(err, ErrProviderDown):
+		return response.Error(c, fiber.StatusBadGateway, "catalog provider unavailable")
 	case errors.Is(err, ErrNotFound):
 		return response.Error(c, fiber.StatusNotFound, "no game found")
 	case errors.Is(err, ErrRateLimited):

@@ -1,8 +1,5 @@
-import { Platform } from 'react-native';
-
-const FALLBACK_HOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
-const HOST = process.env.EXPO_PUBLIC_API_HOST || FALLBACK_HOST;
-export const EMBEDDINGS_BASE = `http://${HOST}:8700`;
+import { api } from '@/services/api';
+import type { CoverAnalysis } from '@/services/types';
 
 interface EmbedResponse {
   embedding: number[];
@@ -17,6 +14,7 @@ function withTimeout(ms: number): AbortSignal {
 }
 
 export async function embedPhoto(uri: string): Promise<number[]> {
+  console.info('[scanner] cover analysis started: visual match');
   const form = new FormData();
   form.append('image', {
     uri,
@@ -24,23 +22,14 @@ export async function embedPhoto(uri: string): Promise<number[]> {
     type: 'image/jpeg',
   } as unknown as Blob);
 
-  const resp = await fetch(`${EMBEDDINGS_BASE}/embed`, {
-    method: 'POST',
-    body: form,
-    // Do NOT set Content-Type manually: React Native must generate the
-    // multipart boundary itself, otherwise FastAPI cannot parse the upload.
-    signal: withTimeout(20000),
+  const { data } = await api.post<EmbedResponse>('/scanner/embed', form, {
+    timeout: 120000,
+    signal: withTimeout(120000),
   });
-
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`embedding failed (${resp.status}): ${text}`);
-  }
-
-  const data = (await resp.json()) as EmbedResponse;
   if (!Array.isArray(data.embedding) || data.embedding.length === 0) {
     throw new Error('empty embedding response');
   }
+  console.info(`[scanner] cover analysis finished: visual match (${data.embedding.length} dimensions)`);
   return data.embedding;
 }
 
@@ -48,6 +37,7 @@ export async function embedPhoto(uri: string): Promise<number[]> {
 // expo-mlkit-ocr are not available: the photo is uploaded to the embeddings
 // service and the recognized text line is returned.
 export async function ocrPhoto(uri: string): Promise<string | null> {
+  console.info('[scanner] cover analysis started: OCR');
   const form = new FormData();
   form.append('image', {
     uri,
@@ -55,17 +45,25 @@ export async function ocrPhoto(uri: string): Promise<string | null> {
     type: 'image/jpeg',
   } as unknown as Blob);
 
-  const resp = await fetch(`${EMBEDDINGS_BASE}/ocr`, {
-    method: 'POST',
-    body: form,
+  const { data } = await api.post<{ text?: string }>('/scanner/ocr', form, {
+    timeout: 30000,
     signal: withTimeout(30000),
   });
+  const text = data.text ?? '';
+  console.info(`[scanner] cover analysis finished: OCR (${text ? 'text found' : 'no text'})`);
+  return text;
+}
 
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`ocr failed (${resp.status}): ${text}`);
-  }
-
-  const data = (await resp.json()) as { text?: string };
-  return data.text ?? '';
+export async function analyzeCover(uri: string): Promise<CoverAnalysis> {
+  console.info('[scanner] cover analysis started: Qwen metadata');
+  const form = new FormData();
+  form.append('image', { uri, name: 'cover.jpg', type: 'image/jpeg' } as unknown as Blob);
+  const { data } = await api.post<CoverAnalysis>('/scanner/analyze', form, {
+    // La primera inferencia de Qwen puede tardar en CPU.
+    timeout: 180000,
+    signal: withTimeout(180000),
+  });
+  if (!data || typeof data.title !== 'string') throw new Error('invalid cover analysis response');
+  console.info(`[scanner] cover analysis finished: Qwen (${data.title || 'no title'})`);
+  return data;
 }

@@ -77,6 +77,17 @@ func (h *Handler) Refresh(c fiber.Ctx) error {
 	return response.Success(c, tokens)
 }
 
+func (h *Handler) Logout(c fiber.Ctx) error {
+	var req RefreshRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if err := h.service.Logout(req.RefreshToken); err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, "failed to logout")
+	}
+	return response.NoContent(c)
+}
+
 func (h *Handler) Me(c fiber.Ctx) error {
 	userID := middleware.GetUserID(c)
 

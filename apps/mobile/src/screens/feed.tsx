@@ -46,7 +46,8 @@ export function Feed() {
   return (
     <View style={styles.container}>
       <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.header}>
-        <Text style={styles.title}>Activity Feed</Text>
+        <Text style={styles.eyebrow}>COMMUNITY</Text>
+        <Text style={styles.title}>What collectors are playing.</Text>
       </Animated.View>
 
       {isLoading ? (
@@ -87,14 +88,15 @@ export function Feed() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg.deep },
-  header: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 12 },
-  title: { color: theme.text.primary, fontSize: 24, fontWeight: '700' },
-  list: { paddingHorizontal: 16 },
+  header: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 16 },
+  eyebrow: { color: theme.text.muted, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginBottom: 8 },
+  title: { color: theme.text.primary, fontSize: 28, lineHeight: 32, fontWeight: '700' },
+  list: { paddingHorizontal: 20 },
   empty: { color: theme.text.muted, fontSize: 14, textAlign: 'center', marginTop: 60 },
   feedItem: {
     flexDirection: 'row',
     backgroundColor: theme.bg.card,
-    borderRadius: 10,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 8,
     alignItems: 'flex-start',

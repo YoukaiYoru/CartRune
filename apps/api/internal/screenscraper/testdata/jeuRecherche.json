@@ -2,7 +2,7 @@
  "header": {
   "APIversion": "2.0",
   "dateTime": "2026-08-31 21:53:40",
-  "commandRequested": "https://neoclone.screenscraper.fr/api2/jeuRecherche.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&output=json&ssid=yoru25&sspassword=RgsiuVXsg2I&recherche=super%20mario%2064",
+  "commandRequested": "https://neoclone.screenscraper.fr/api2/jeuRecherche.php?devid=redacted&devpassword=redacted&softname=CartRune&output=json&ssid=redacted&sspassword=redacted&recherche=super%20mario%2064",
   "success": "true",
   "error": ""
  },
@@ -168,7 +168,7 @@
      {
       "type": "sstitle",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=sstitle(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=sstitle(wor)",
       "region": "wor",
       "crc": "4ff9b276",
       "md5": "df02f91960da678c86e921778db658f3",
@@ -179,7 +179,7 @@
      {
       "type": "ss",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=ss(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=ss(wor)",
       "region": "wor",
       "crc": "8a1f7403",
       "md5": "7a148ed2f7b2f14900c6bdb1650ac5e9",
@@ -190,7 +190,7 @@
      {
       "type": "fanart",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=fanart",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=fanart",
       "crc": "51dbe564",
       "md5": "c3747f8603575fbe9c4c12ebb375c6db",
       "sha1": "cd698a9144e0a42e31f971127b8d2940865deba6",
@@ -200,7 +200,7 @@
      {
       "type": "video",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=video",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=video",
       "crc": "dd286d04",
       "md5": "8e04c0f0284fd82a3b8090488ebaee76",
       "sha1": "57a063d331015242b9bc1283da92e2a0ae5959d9",
@@ -210,7 +210,7 @@
      {
       "type": "video-normalized",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=video-normalized",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=video-normalized",
       "crc": "00d5c55c",
       "md5": "5ec3f85fdbcd6ac12330671120099e41",
       "sha1": "d5a1c10bb77548fa2f2073a20c232944a77f9888",
@@ -220,7 +220,7 @@
      {
       "type": "steamgrid",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=steamgrid",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=steamgrid",
       "crc": "2494458b",
       "md5": "9fba6f63fd93232968f32a8c9bb1be02",
       "sha1": "6d05b74c571cc0dccbb5d634211e15c652f62c31",
@@ -230,7 +230,7 @@
      {
       "type": "wheel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=wheel(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=wheel(wor)",
       "region": "wor",
       "crc": "ca8b942b",
       "md5": "f650a7c5c39e8c98bd1aa5f8b77899b8",
@@ -241,7 +241,7 @@
      {
       "type": "wheel-carbon",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=wheel-carbon(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=wheel-carbon(wor)",
       "region": "wor",
       "crc": "7210271d",
       "md5": "4160a7538f0fda2522c7f9995022c083",
@@ -252,7 +252,7 @@
      {
       "type": "wheel-steel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=wheel-steel(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=wheel-steel(wor)",
       "region": "wor",
       "crc": "ed5de044",
       "md5": "a064a3e179c7b3f6ca284d3f4beb18f0",
@@ -263,7 +263,7 @@
      {
       "type": "screenmarquee",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=screenmarquee(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=screenmarquee(wor)",
       "region": "wor",
       "crc": "07558b3e",
       "md5": "7b57141eb60d985b58c7c0b0c503d995",
@@ -274,7 +274,7 @@
      {
       "type": "screenmarqueesmall",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=screenmarqueesmall(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=screenmarqueesmall(wor)",
       "region": "wor",
       "crc": "a72370e3",
       "md5": "f1d6f50feea0fb71053bfc99d968946c",
@@ -285,7 +285,7 @@
      {
       "type": "box-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D(eu)",
       "region": "eu",
       "crc": "2bacb8b3",
       "md5": "da5d32c19e13964341f85dadfc9dff2b",
@@ -296,7 +296,7 @@
      {
       "type": "box-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D(ss)",
       "region": "ss",
       "crc": "ec437948",
       "md5": "36312a9de707f151b7cddac69c6909b2",
@@ -307,7 +307,7 @@
      {
       "type": "box-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D(tw)",
       "region": "tw",
       "crc": "d7cfb8c7",
       "md5": "9d7b5aac9115c452726e79cfc75891e5",
@@ -318,7 +318,7 @@
      {
       "type": "box-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D(us)",
       "region": "us",
       "crc": "615b0de2",
       "md5": "c4d289565728f516af10acf3a3343bd6",
@@ -329,7 +329,7 @@
      {
       "type": "box-2D-side",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D-side(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D-side(eu)",
       "region": "eu",
       "crc": "3576927f",
       "md5": "a5b3cab585151f13d74817dd41d02edd",
@@ -340,7 +340,7 @@
      {
       "type": "box-2D-side",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D-side(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D-side(ss)",
       "region": "ss",
       "crc": "48d538ab",
       "md5": "c109d4bf9b9efebde8f309b8267a7560",
@@ -351,7 +351,7 @@
      {
       "type": "box-2D-side",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D-side(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D-side(tw)",
       "region": "tw",
       "crc": "c6b7d83f",
       "md5": "48ffc56974486e530be17c9df3b7f3c2",
@@ -362,7 +362,7 @@
      {
       "type": "box-2D-side",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D-side(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D-side(us)",
       "region": "us",
       "crc": "5f600470",
       "md5": "dc151684dc4d1cccec9133e89554aaba",
@@ -373,7 +373,7 @@
      {
       "type": "box-2D-back",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D-back(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D-back(eu)",
       "region": "eu",
       "crc": "5db6541a",
       "md5": "442852b252a47104f55dc5eff9e5ec0b",
@@ -384,7 +384,7 @@
      {
       "type": "box-2D-back",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D-back(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D-back(ss)",
       "region": "ss",
       "crc": "e4e0cb6b",
       "md5": "9e005906b91670a605525b729330ed99",
@@ -395,7 +395,7 @@
      {
       "type": "box-2D-back",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D-back(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D-back(tw)",
       "region": "tw",
       "crc": "16f84354",
       "md5": "cb0d158d6732c0640f265f715d7a5b52",
@@ -406,7 +406,7 @@
      {
       "type": "box-2D-back",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-2D-back(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-2D-back(us)",
       "region": "us",
       "crc": "74e55d3e",
       "md5": "1c7609c64e56d1ae5ffc53867cff0854",
@@ -417,7 +417,7 @@
      {
       "type": "box-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-texture(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-texture(eu)",
       "region": "eu",
       "crc": "676cca71",
       "md5": "15808fd59e753e1f211044c6d24a92c1",
@@ -428,7 +428,7 @@
      {
       "type": "box-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-texture(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-texture(ss)",
       "region": "ss",
       "crc": "90b54a33",
       "md5": "66a58e15805e5a493d98fbed5ae3f505",
@@ -439,7 +439,7 @@
      {
       "type": "box-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-texture(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-texture(tw)",
       "region": "tw",
       "crc": "3e75f617",
       "md5": "7818bb7fa69f3599a2f76802efe46506",
@@ -450,7 +450,7 @@
      {
       "type": "box-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-texture(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-texture(us)",
       "region": "us",
       "crc": "19acaf14",
       "md5": "5114ac7342649fe9a81fe44b64318fdf",
@@ -461,7 +461,7 @@
      {
       "type": "box-3D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-3D(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-3D(eu)",
       "region": "eu",
       "crc": "a894dfc7",
       "md5": "9e0d71571471031d9f531b2ce1c17c21",
@@ -472,7 +472,7 @@
      {
       "type": "box-3D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-3D(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-3D(ss)",
       "region": "ss",
       "crc": "85c99a23",
       "md5": "275d6569643e4091b516216db289565b",
@@ -483,7 +483,7 @@
      {
       "type": "box-3D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-3D(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-3D(tw)",
       "region": "tw",
       "crc": "18038a3d",
       "md5": "962e8657761f7aa16f31d832d0cdf398",
@@ -494,7 +494,7 @@
      {
       "type": "box-3D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=box-3D(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=box-3D(us)",
       "region": "us",
       "crc": "8112077d",
       "md5": "a9da358be39fc3925d3859b1477d855a",
@@ -505,7 +505,7 @@
      {
       "type": "manuel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaManuelJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=manuel(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaManuelJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=manuel(eu)",
       "region": "eu",
       "crc": "4449dc58",
       "md5": "113d7c0b066824878177980ee98e5de8",
@@ -516,7 +516,7 @@
      {
       "type": "manuel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaManuelJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=manuel(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaManuelJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=manuel(us)",
       "region": "us",
       "crc": "d04f2d77",
       "md5": "c2f5aaeffcd7f664d694611b5b0fd2dd",
@@ -527,7 +527,7 @@
      {
       "type": "support-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=support-texture(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=support-texture(eu)",
       "region": "eu",
       "crc": "92c715ff",
       "md5": "13ce66ee0f28f0ae3c62388aeb7b4a0e",
@@ -538,7 +538,7 @@
      {
       "type": "support-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=support-texture(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=support-texture(tw)",
       "region": "tw",
       "crc": "6fa7b415",
       "md5": "4468ae468372c9945c470486a11b04c2",
@@ -549,7 +549,7 @@
      {
       "type": "support-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=support-texture(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=support-texture(us)",
       "region": "us",
       "crc": "c8c17217",
       "md5": "5908c172e0a21306d34db625293f97ef",
@@ -560,7 +560,7 @@
      {
       "type": "support-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=support-2D(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=support-2D(eu)",
       "region": "eu",
       "crc": "c47d4aa1",
       "md5": "1795248c06468a74808e75085f98adeb",
@@ -571,7 +571,7 @@
      {
       "type": "support-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=support-2D(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=support-2D(tw)",
       "region": "tw",
       "crc": "185cfb67",
       "md5": "cc698806bdb795a63ea5358b8bed9f2a",
@@ -582,7 +582,7 @@
      {
       "type": "support-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=support-2D(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=support-2D(us)",
       "region": "us",
       "crc": "7b73792e",
       "md5": "fe9b5d8b10891cdf66329e7904f768a9",
@@ -593,7 +593,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv1(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv1(eu)",
       "region": "eu",
       "crc": "abc13be4",
       "md5": "2c2bd7fd93d77c6409b53ef4c91add25",
@@ -604,7 +604,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv1(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv1(ss)",
       "region": "ss",
       "crc": "1683c2e6",
       "md5": "3b3146d53130752328b675e47de91b2b",
@@ -615,7 +615,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv1(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv1(tw)",
       "region": "tw",
       "crc": "8c6aaf84",
       "md5": "0712bfdf7b2c246154c554541547db4f",
@@ -626,7 +626,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv1(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv1(us)",
       "region": "us",
       "crc": "acddefa1",
       "md5": "96013f9d46b51a10ba63413da6045dff",
@@ -637,7 +637,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv1(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv1(wor)",
       "region": "wor",
       "crc": "abc13be4",
       "md5": "2c2bd7fd93d77c6409b53ef4c91add25",
@@ -648,7 +648,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv2(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv2(eu)",
       "region": "eu",
       "crc": "21de5f4c",
       "md5": "144ac930ac2faa8db14352038319536e",
@@ -659,7 +659,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv2(nl)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv2(nl)",
       "region": "nl",
       "crc": "22a3943c",
       "md5": "1c6c4dcb69b331fbae7837ddf4e3c5b1",
@@ -670,7 +670,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv2(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv2(ss)",
       "region": "ss",
       "crc": "0a0e8542",
       "md5": "1917a1c1d0b5c134d275ebfde1265c91",
@@ -681,7 +681,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv2(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv2(tw)",
       "region": "tw",
       "crc": "3fe73b3b",
       "md5": "45a6ba379335968eacd02cbe2a14c230",
@@ -692,7 +692,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv2(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv2(us)",
       "region": "us",
       "crc": "a20efbfe",
       "md5": "5b0301fb394f5e1f4d867afd9292f0d5",
@@ -703,7 +703,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=108916&media=mixrbv2(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=108916&media=mixrbv2(wor)",
       "region": "wor",
       "crc": "22a3943c",
       "md5": "1c6c4dcb69b331fbae7837ddf4e3c5b1",
@@ -714,7 +714,7 @@
      {
       "type": "pictoliste",
       "parent": "joueurs",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=3304&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=3304&media=pictoliste",
       "crc": "0abdc9bf",
       "md5": "05057bd8fcfe368b23628ba314e94df0",
       "sha1": "6d9b48053c720498ece35d0029621b7d25010d3b",
@@ -724,7 +724,7 @@
      {
       "type": "pictoliste",
       "parent": "note",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=3557&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=3557&media=pictoliste",
       "crc": "206732a0",
       "md5": "ca952b9f9d623c920455eaa80c5c115b",
       "sha1": "b0a49aae7e51432fcae126eb1e9b688bd966c448",
@@ -736,7 +736,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=pictoliste",
       "crc": "2ff6989e",
       "md5": "11ebfe3b2f55537a13428e16bb93af61",
       "sha1": "79f02cb0550561936936c74052f08136b35d91d8",
@@ -748,7 +748,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=logo-monochrome",
       "crc": "2686c093",
       "md5": "9da37be446c4e8186247ea437fbfd813",
       "sha1": "89a677f905873a40a70f49266a84efbf66607cec",
@@ -760,7 +760,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=pictoliste",
       "crc": "d8329f23",
       "md5": "ada4054a77e20edada97225e5c316116",
       "sha1": "cfadf96438bde8ae1a8c3c52c85dd6768ba9b4c8",
@@ -772,7 +772,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=logo-monochrome",
       "crc": "0f88a1ba",
       "md5": "e8c818f5f59d48642afea18e5c545c15",
       "sha1": "ef3857055eaae13785d2cab692edf9454b544be3",
@@ -940,7 +940,7 @@
      {
       "type": "sstitle",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=sstitle(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=sstitle(wor)",
       "region": "wor",
       "crc": "af207bae",
       "md5": "a12ae0cd72c965cd2196093899ed6d3d",
@@ -951,7 +951,7 @@
      {
       "type": "ss",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=ss(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=ss(wor)",
       "region": "wor",
       "crc": "b75e821a",
       "md5": "dc9e58c38e6688b5aed41a3e2dc19648",
@@ -962,7 +962,7 @@
      {
       "type": "fanart",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=fanart",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=fanart",
       "crc": "9ef73f49",
       "md5": "eb9c13c66be3b7a6a4fec384f2726116",
       "sha1": "b7f95f019ecf5ff0a13203f839b3547bef84a146",
@@ -972,7 +972,7 @@
      {
       "type": "video",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=video",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=video",
       "crc": "430c84ea",
       "md5": "ed8569f8b3e299575c8025477a883e02",
       "sha1": "586d913dc2cf54dee895af7a686adb805655db9e",
@@ -982,7 +982,7 @@
      {
       "type": "video-normalized",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=video-normalized",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=video-normalized",
       "crc": "02e5552f",
       "md5": "fa902b24b11a1b866fa82c801a42ebb4",
       "sha1": "4eab59998a815f4406b63ad2cda8f5c9a842fa0a",
@@ -992,7 +992,7 @@
      {
       "type": "steamgrid",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=steamgrid",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=steamgrid",
       "crc": "58dcad6e",
       "md5": "c32ce3da8e80a74de48c8e5dff74563c",
       "sha1": "29ea5db0873bb0d0d2ba1ed599682bc19bc117b8",
@@ -1002,7 +1002,7 @@
      {
       "type": "wheel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=wheel(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=wheel(eu)",
       "region": "eu",
       "crc": "c409fb89",
       "md5": "a1f7905cb954344b05bcc0377d743989",
@@ -1013,7 +1013,7 @@
      {
       "type": "wheel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=wheel(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=wheel(us)",
       "region": "us",
       "crc": "12725d15",
       "md5": "3c6085d7225fd34473c6b4e794bb314b",
@@ -1024,7 +1024,7 @@
      {
       "type": "wheel-carbon",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=wheel-carbon(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=wheel-carbon(eu)",
       "region": "eu",
       "crc": "8bc59d72",
       "md5": "332385de1a6af51c33e76e6b0a0bb56b",
@@ -1035,7 +1035,7 @@
      {
       "type": "wheel-carbon",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=wheel-carbon(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=wheel-carbon(us)",
       "region": "us",
       "crc": "e1c039f1",
       "md5": "709061e976e8e82d642e18f64bd01bdf",
@@ -1046,7 +1046,7 @@
      {
       "type": "wheel-steel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=wheel-steel(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=wheel-steel(eu)",
       "region": "eu",
       "crc": "2bd9ec2f",
       "md5": "58d6d3f54a73d424143f6aa96ca894d4",
@@ -1057,7 +1057,7 @@
      {
       "type": "wheel-steel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=wheel-steel(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=wheel-steel(us)",
       "region": "us",
       "crc": "03fbe86f",
       "md5": "083396730f4c6eef5a31569420d17d55",
@@ -1068,7 +1068,7 @@
      {
       "type": "screenmarquee",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=screenmarquee(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=screenmarquee(eu)",
       "region": "eu",
       "crc": "0f6b7de7",
       "md5": "8f8938488a70a23cf32bafa4c7e31a3c",
@@ -1079,7 +1079,7 @@
      {
       "type": "screenmarqueesmall",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=screenmarqueesmall(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=screenmarqueesmall(eu)",
       "region": "eu",
       "crc": "80f740f4",
       "md5": "2078e2207fb69123bf1b9845556dafe7",
@@ -1090,7 +1090,7 @@
      {
       "type": "box-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D(cus)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D(cus)",
       "region": "cus",
       "crc": "1556c038",
       "md5": "ceb5cd5a40ae76d50746156529e19494",
@@ -1101,7 +1101,7 @@
      {
       "type": "box-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D(eu)",
       "region": "eu",
       "crc": "82ffd188",
       "md5": "809d49e7eb77f18b3930e3a6f49a8541",
@@ -1112,7 +1112,7 @@
      {
       "type": "box-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D(ss)",
       "region": "ss",
       "crc": "311a8b61",
       "md5": "376680677734f047b6122217af8a7cad",
@@ -1123,7 +1123,7 @@
      {
       "type": "box-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D(us)",
       "region": "us",
       "crc": "7e34870a",
       "md5": "c74b6affde6a232bfc7992f43cb29ba0",
@@ -1134,7 +1134,7 @@
      {
       "type": "box-2D-side",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D-side(cus)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D-side(cus)",
       "region": "cus",
       "crc": "d5d2e1df",
       "md5": "b87ac831cc04e824ca48a21246a5d0a5",
@@ -1145,7 +1145,7 @@
      {
       "type": "box-2D-side",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D-side(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D-side(eu)",
       "region": "eu",
       "crc": "9964430b",
       "md5": "b676533838f39d9b7e20bb597582ee42",
@@ -1156,7 +1156,7 @@
      {
       "type": "box-2D-side",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D-side(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D-side(ss)",
       "region": "ss",
       "crc": "4b1b788e",
       "md5": "c55fe368b682c1bda845d71d54ee3391",
@@ -1167,7 +1167,7 @@
      {
       "type": "box-2D-side",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D-side(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D-side(us)",
       "region": "us",
       "crc": "1e9e0097",
       "md5": "3bada70eb193b1dde2abf5a14360b69a",
@@ -1178,7 +1178,7 @@
      {
       "type": "box-2D-back",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D-back(cus)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D-back(cus)",
       "region": "cus",
       "crc": "03f4f1ae",
       "md5": "d43fd9383b383a2aea6037f26d86ee22",
@@ -1189,7 +1189,7 @@
      {
       "type": "box-2D-back",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D-back(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D-back(eu)",
       "region": "eu",
       "crc": "aaf167e5",
       "md5": "ba1d6e7a85885c5340afc04ca0f34e6f",
@@ -1200,7 +1200,7 @@
      {
       "type": "box-2D-back",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D-back(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D-back(ss)",
       "region": "ss",
       "crc": "4c27fd50",
       "md5": "656208ef3eadac02c0edef1115f7921b",
@@ -1211,7 +1211,7 @@
      {
       "type": "box-2D-back",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-2D-back(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-2D-back(us)",
       "region": "us",
       "crc": "75e11ab1",
       "md5": "78671e8a168379e3c253a2c21d0bb7ac",
@@ -1222,7 +1222,7 @@
      {
       "type": "box-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-texture(cus)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-texture(cus)",
       "region": "cus",
       "crc": "07ac6f55",
       "md5": "9560d7d386e057cf2bf64634b88fdd32",
@@ -1233,7 +1233,7 @@
      {
       "type": "box-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-texture(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-texture(eu)",
       "region": "eu",
       "crc": "08d17674",
       "md5": "8d856c94968c87d4f11ac9fd979fd5d1",
@@ -1244,7 +1244,7 @@
      {
       "type": "box-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-texture(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-texture(ss)",
       "region": "ss",
       "crc": "8a058368",
       "md5": "9478cb8bf2fd14c6f275b29590a847fb",
@@ -1255,7 +1255,7 @@
      {
       "type": "box-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-texture(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-texture(us)",
       "region": "us",
       "crc": "eb4136f6",
       "md5": "165d5707eff7e9924ed40a841779c816",
@@ -1266,7 +1266,7 @@
      {
       "type": "box-3D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-3D(cus)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-3D(cus)",
       "region": "cus",
       "crc": "dea341e4",
       "md5": "6b61c69ecb192cf4b4c426f243408e14",
@@ -1277,7 +1277,7 @@
      {
       "type": "box-3D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-3D(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-3D(eu)",
       "region": "eu",
       "crc": "bef1210b",
       "md5": "2b2564f94a74f54a4bf37ef918c4e740",
@@ -1288,7 +1288,7 @@
      {
       "type": "box-3D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-3D(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-3D(ss)",
       "region": "ss",
       "crc": "12aae450",
       "md5": "e9e3aa0bfc6d9b56d12a2129dbc29ef7",
@@ -1299,7 +1299,7 @@
      {
       "type": "box-3D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=box-3D(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=box-3D(us)",
       "region": "us",
       "crc": "eaf91827",
       "md5": "163f55dbd9ed274e8bb83c630d84bf8a",
@@ -1310,7 +1310,7 @@
      {
       "type": "support-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=support-texture(cus)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=support-texture(cus)",
       "region": "cus",
       "crc": "bb0fea3a",
       "md5": "12cd2c208858632f80ecf441e893e58a",
@@ -1321,7 +1321,7 @@
      {
       "type": "support-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=support-texture(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=support-texture(eu)",
       "region": "eu",
       "crc": "263af609",
       "md5": "f09cd4b867f1b2f0a9b53445fd985b02",
@@ -1332,7 +1332,7 @@
      {
       "type": "support-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=support-texture(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=support-texture(tw)",
       "region": "tw",
       "crc": "fc607cea",
       "md5": "a40a6f55cf88ee9a435847f1aeb7e069",
@@ -1343,7 +1343,7 @@
      {
       "type": "support-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=support-texture(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=support-texture(us)",
       "region": "us",
       "crc": "44b5d9df",
       "md5": "67a2271a1927bb0f566b200d5a8dfe3a",
@@ -1354,7 +1354,7 @@
      {
       "type": "support-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=support-2D(cus)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=support-2D(cus)",
       "region": "cus",
       "crc": "e90fba2d",
       "md5": "d5187e1957b6085fd55d02c7eb039059",
@@ -1365,7 +1365,7 @@
      {
       "type": "support-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=support-2D(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=support-2D(eu)",
       "region": "eu",
       "crc": "fde7d907",
       "md5": "f90acc25f0f86c2d3a2a478e07009e5d",
@@ -1376,7 +1376,7 @@
      {
       "type": "support-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=support-2D(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=support-2D(tw)",
       "region": "tw",
       "crc": "673301f0",
       "md5": "b1cc6a06ffabb1d63b708674b96bd64f",
@@ -1387,7 +1387,7 @@
      {
       "type": "support-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=support-2D(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=support-2D(us)",
       "region": "us",
       "crc": "7c2d0d27",
       "md5": "9b6cfce64449c77ddc7997d653625451",
@@ -1398,7 +1398,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv1(cus)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv1(cus)",
       "region": "cus",
       "crc": "12dfe43e",
       "md5": "9d184169da72a9085b89345c0f2f9796",
@@ -1409,7 +1409,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv1(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv1(eu)",
       "region": "eu",
       "crc": "ec44336c",
       "md5": "b81acfe11d0ad5e442a415ed9c8d2ee0",
@@ -1420,7 +1420,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv1(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv1(ss)",
       "region": "ss",
       "crc": "cdac0836",
       "md5": "9eac16602973bc6ac63096db27bcf0b3",
@@ -1431,7 +1431,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv1(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv1(us)",
       "region": "us",
       "crc": "47f47e22",
       "md5": "6ef9417b44fdf09901110de211c99786",
@@ -1442,7 +1442,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv1(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv1(wor)",
       "region": "wor",
       "crc": "ec44336c",
       "md5": "b81acfe11d0ad5e442a415ed9c8d2ee0",
@@ -1453,7 +1453,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv2(cus)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv2(cus)",
       "region": "cus",
       "crc": "beda78eb",
       "md5": "5f3faf5a8855c3907a17b63ca5051d8f",
@@ -1464,7 +1464,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv2(eu)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv2(eu)",
       "region": "eu",
       "crc": "46c3f85b",
       "md5": "eb1fed4f364c55dd3480788693c01d83",
@@ -1475,7 +1475,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv2(nl)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv2(nl)",
       "region": "nl",
       "crc": "46c3f85b",
       "md5": "eb1fed4f364c55dd3480788693c01d83",
@@ -1486,7 +1486,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv2(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv2(ss)",
       "region": "ss",
       "crc": "8360122d",
       "md5": "6c09370592622b6ca4aea5e36e905e7e",
@@ -1497,7 +1497,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv2(tw)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv2(tw)",
       "region": "tw",
       "crc": "795672bf",
       "md5": "3945a87c5734896cb35f6575652a8bf9",
@@ -1508,7 +1508,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv2(us)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv2(us)",
       "region": "us",
       "crc": "0d453a31",
       "md5": "9a0bd52b2e86f60d4bb6844a220f4fca",
@@ -1519,7 +1519,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=109052&media=mixrbv2(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=109052&media=mixrbv2(wor)",
       "region": "wor",
       "crc": "46c3f85b",
       "md5": "eb1fed4f364c55dd3480788693c01d83",
@@ -1530,7 +1530,7 @@
      {
       "type": "pictoliste",
       "parent": "joueurs",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=3304&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=3304&media=pictoliste",
       "crc": "0abdc9bf",
       "md5": "05057bd8fcfe368b23628ba314e94df0",
       "sha1": "6d9b48053c720498ece35d0029621b7d25010d3b",
@@ -1540,7 +1540,7 @@
      {
       "type": "pictoliste",
       "parent": "note",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=3557&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=3557&media=pictoliste",
       "crc": "206732a0",
       "md5": "ca952b9f9d623c920455eaa80c5c115b",
       "sha1": "b0a49aae7e51432fcae126eb1e9b688bd966c448",
@@ -1552,7 +1552,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=pictoliste",
       "crc": "2ff6989e",
       "md5": "11ebfe3b2f55537a13428e16bb93af61",
       "sha1": "79f02cb0550561936936c74052f08136b35d91d8",
@@ -1564,7 +1564,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=logo-monochrome",
       "crc": "2686c093",
       "md5": "9da37be446c4e8186247ea437fbfd813",
       "sha1": "89a677f905873a40a70f49266a84efbf66607cec",
@@ -1576,7 +1576,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=pictoliste",
       "crc": "d8329f23",
       "md5": "ada4054a77e20edada97225e5c316116",
       "sha1": "cfadf96438bde8ae1a8c3c52c85dd6768ba9b4c8",
@@ -1588,7 +1588,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=logo-monochrome",
       "crc": "0f88a1ba",
       "md5": "e8c818f5f59d48642afea18e5c545c15",
       "sha1": "ef3857055eaae13785d2cab692edf9454b544be3",
@@ -1598,7 +1598,7 @@
      {
       "type": "pictocouleur",
       "parent": "editeur",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaCompagnie.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=303&media=wheel",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaCompagnie.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=303&media=wheel",
       "crc": "50d2c4d9",
       "md5": "544707a7245afd02c36a9a1ee6ca0db6",
       "sha1": "41ae658d4cf22695c75c6a3e31a4c61b293797e2",
@@ -1608,7 +1608,7 @@
      {
       "type": "pictocouleur",
       "parent": "developpeur",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaCompagnie.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=303&media=wheel",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaCompagnie.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=303&media=wheel",
       "crc": "50d2c4d9",
       "md5": "544707a7245afd02c36a9a1ee6ca0db6",
       "sha1": "41ae658d4cf22695c75c6a3e31a4c61b293797e2",
@@ -1618,7 +1618,7 @@
      {
       "type": "pictoliste",
       "parent": "joueurs",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=3304&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=3304&media=pictoliste",
       "crc": "0abdc9bf",
       "md5": "05057bd8fcfe368b23628ba314e94df0",
       "sha1": "6d9b48053c720498ece35d0029621b7d25010d3b",
@@ -1630,7 +1630,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=pictoliste",
       "crc": "2ff6989e",
       "md5": "11ebfe3b2f55537a13428e16bb93af61",
       "sha1": "79f02cb0550561936936c74052f08136b35d91d8",
@@ -1642,7 +1642,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=logo-monochrome",
       "crc": "2686c093",
       "md5": "9da37be446c4e8186247ea437fbfd813",
       "sha1": "89a677f905873a40a70f49266a84efbf66607cec",
@@ -1654,7 +1654,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=pictoliste",
       "crc": "d8329f23",
       "md5": "ada4054a77e20edada97225e5c316116",
       "sha1": "cfadf96438bde8ae1a8c3c52c85dd6768ba9b4c8",
@@ -1666,7 +1666,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=logo-monochrome",
       "crc": "0f88a1ba",
       "md5": "e8c818f5f59d48642afea18e5c545c15",
       "sha1": "ef3857055eaae13785d2cab692edf9454b544be3",
@@ -1796,7 +1796,7 @@
      {
       "type": "sstitle",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=sstitle(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=sstitle(wor)",
       "region": "wor",
       "crc": "13c8dced",
       "md5": "4fb04d1d23731ec6254f10abd0b3bce3",
@@ -1807,7 +1807,7 @@
      {
       "type": "ss",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=ss(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=ss(wor)",
       "region": "wor",
       "crc": "9e874358",
       "md5": "4a3d213e570527e1257c2d4ca0921295",
@@ -1818,7 +1818,7 @@
      {
       "type": "steamgrid",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=steamgrid",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=steamgrid",
       "crc": "ce0f6921",
       "md5": "546c83c8454421ad2ed73774ab77756d",
       "sha1": "732c628fecfa8880cce891ed7364e89f3e6f37bf",
@@ -1828,7 +1828,7 @@
      {
       "type": "wheel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=wheel(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=wheel(wor)",
       "region": "wor",
       "crc": "276cab49",
       "md5": "af3b7d6b62c1e7b29f0030804b8b22f3",
@@ -1839,7 +1839,7 @@
      {
       "type": "wheel-carbon",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=wheel-carbon(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=wheel-carbon(wor)",
       "region": "wor",
       "crc": "41b7a87f",
       "md5": "d5f467cf6078d701e8453cdf2dff5736",
@@ -1850,7 +1850,7 @@
      {
       "type": "wheel-steel",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=wheel-steel(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=wheel-steel(wor)",
       "region": "wor",
       "crc": "320b7514",
       "md5": "8fcc5a484c6e85e2041613ba7d1af275",
@@ -1861,7 +1861,7 @@
      {
       "type": "screenmarquee",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=screenmarquee(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=screenmarquee(wor)",
       "region": "wor",
       "crc": "22bf7bb6",
       "md5": "97abe9f32b90c529e5097d2b547a1c3e",
@@ -1872,7 +1872,7 @@
      {
       "type": "screenmarqueesmall",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=screenmarqueesmall(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=screenmarqueesmall(wor)",
       "region": "wor",
       "crc": "b24215a2",
       "md5": "13a510fc459fc43384cf4511675621ce",
@@ -1883,7 +1883,7 @@
      {
       "type": "box-2D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=box-2D(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=box-2D(ss)",
       "region": "ss",
       "crc": "03a2a4d0",
       "md5": "647a93438033e3b693935e58905d1740",
@@ -1894,7 +1894,7 @@
      {
       "type": "box-2D-side",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=box-2D-side(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=box-2D-side(ss)",
       "region": "ss",
       "crc": "bef03a8f",
       "md5": "25a78f8fe4b8d0611a88c91b608acf61",
@@ -1905,7 +1905,7 @@
      {
       "type": "box-2D-back",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=box-2D-back(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=box-2D-back(ss)",
       "region": "ss",
       "crc": "23594bf8",
       "md5": "0b5ca72645238c94aeaedd86842115f5",
@@ -1916,7 +1916,7 @@
      {
       "type": "box-texture",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=box-texture(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=box-texture(ss)",
       "region": "ss",
       "crc": "6211a189",
       "md5": "7a773eae3dc2299647d493f1b8bb1013",
@@ -1927,7 +1927,7 @@
      {
       "type": "box-3D",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=box-3D(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=box-3D(ss)",
       "region": "ss",
       "crc": "fad75aeb",
       "md5": "551b2e586029ced9e090ec14b2e88195",
@@ -1938,7 +1938,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=mixrbv1(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=mixrbv1(ss)",
       "region": "ss",
       "crc": "b8ad751c",
       "md5": "6af23eae493590d95aab8b1d3d8bc433",
@@ -1949,7 +1949,7 @@
      {
       "type": "mixrbv1",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=mixrbv1(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=mixrbv1(wor)",
       "region": "wor",
       "crc": "b8ad751c",
       "md5": "6af23eae493590d95aab8b1d3d8bc433",
@@ -1960,7 +1960,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=mixrbv2(ru)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=mixrbv2(ru)",
       "region": "ru",
       "crc": "4fc51e39",
       "md5": "a2935cd0fb0d23556025b4d10e4728c6",
@@ -1971,7 +1971,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=mixrbv2(ss)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=mixrbv2(ss)",
       "region": "ss",
       "crc": "4fc51e39",
       "md5": "a2935cd0fb0d23556025b4d10e4728c6",
@@ -1982,7 +1982,7 @@
      {
       "type": "mixrbv2",
       "parent": "jeu",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&systemeid=1&jeuid=125639&media=mixrbv2(wor)",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&systemeid=1&jeuid=125639&media=mixrbv2(wor)",
       "region": "wor",
       "crc": "4fc51e39",
       "md5": "a2935cd0fb0d23556025b4d10e4728c6",
@@ -1993,7 +1993,7 @@
      {
       "type": "pictoliste",
       "parent": "joueurs",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=3304&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=3304&media=pictoliste",
       "crc": "0abdc9bf",
       "md5": "05057bd8fcfe368b23628ba314e94df0",
       "sha1": "6d9b48053c720498ece35d0029621b7d25010d3b",
@@ -2003,7 +2003,7 @@
      {
       "type": "pictoliste",
       "parent": "note",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=3557&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=3557&media=pictoliste",
       "crc": "206732a0",
       "md5": "ca952b9f9d623c920455eaa80c5c115b",
       "sha1": "b0a49aae7e51432fcae126eb1e9b688bd966c448",
@@ -2015,7 +2015,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=pictoliste",
       "crc": "2ff6989e",
       "md5": "11ebfe3b2f55537a13428e16bb93af61",
       "sha1": "79f02cb0550561936936c74052f08136b35d91d8",
@@ -2027,7 +2027,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=logo-monochrome",
       "crc": "2686c093",
       "md5": "9da37be446c4e8186247ea437fbfd813",
       "sha1": "89a677f905873a40a70f49266a84efbf66607cec",
@@ -2039,7 +2039,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=pictoliste",
       "crc": "d8329f23",
       "md5": "ada4054a77e20edada97225e5c316116",
       "sha1": "cfadf96438bde8ae1a8c3c52c85dd6768ba9b4c8",
@@ -2051,7 +2051,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=logo-monochrome",
       "crc": "0f88a1ba",
       "md5": "e8c818f5f59d48642afea18e5c545c15",
       "sha1": "ef3857055eaae13785d2cab692edf9454b544be3",
@@ -2061,7 +2061,7 @@
      {
       "type": "pictocouleur",
       "parent": "editeur",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaCompagnie.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=303&media=wheel",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaCompagnie.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=303&media=wheel",
       "crc": "50d2c4d9",
       "md5": "544707a7245afd02c36a9a1ee6ca0db6",
       "sha1": "41ae658d4cf22695c75c6a3e31a4c61b293797e2",
@@ -2071,7 +2071,7 @@
      {
       "type": "pictocouleur",
       "parent": "developpeur",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaCompagnie.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=303&media=wheel",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaCompagnie.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=303&media=wheel",
       "crc": "50d2c4d9",
       "md5": "544707a7245afd02c36a9a1ee6ca0db6",
       "sha1": "41ae658d4cf22695c75c6a3e31a4c61b293797e2",
@@ -2081,7 +2081,7 @@
      {
       "type": "pictoliste",
       "parent": "joueurs",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=3304&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=3304&media=pictoliste",
       "crc": "0abdc9bf",
       "md5": "05057bd8fcfe368b23628ba314e94df0",
       "sha1": "6d9b48053c720498ece35d0029621b7d25010d3b",
@@ -2093,7 +2093,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=pictoliste",
       "crc": "2ff6989e",
       "md5": "11ebfe3b2f55537a13428e16bb93af61",
       "sha1": "79f02cb0550561936936c74052f08136b35d91d8",
@@ -2105,7 +2105,7 @@
       "parent": "genre",
       "subparent": "Plateforme / Run & Jump",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=2915&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=2915&media=logo-monochrome",
       "crc": "2686c093",
       "md5": "9da37be446c4e8186247ea437fbfd813",
       "sha1": "89a677f905873a40a70f49266a84efbf66607cec",
@@ -2117,7 +2117,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=pictoliste",
       "crc": "d8329f23",
       "md5": "ada4054a77e20edada97225e5c316116",
       "sha1": "cfadf96438bde8ae1a8c3c52c85dd6768ba9b4c8",
@@ -2129,7 +2129,7 @@
       "parent": "genre",
       "subparent": "Plateforme",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=7&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=7&media=logo-monochrome",
       "crc": "0f88a1ba",
       "md5": "e8c818f5f59d48642afea18e5c545c15",
       "sha1": "ef3857055eaae13785d2cab692edf9454b544be3",
@@ -2139,7 +2139,7 @@
      {
       "type": "pictoliste",
       "parent": "joueurs",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=3304&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=3304&media=pictoliste",
       "crc": "0abdc9bf",
       "md5": "05057bd8fcfe368b23628ba314e94df0",
       "sha1": "6d9b48053c720498ece35d0029621b7d25010d3b",
@@ -2151,7 +2151,7 @@
       "parent": "genre",
       "subparent": "Compilation",
       "type": "pictoliste",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=34&media=pictoliste",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=34&media=pictoliste",
       "crc": "c0889b9a",
       "md5": "2b6b7722985e14a75dc767bbb216545d",
       "sha1": "edca6abd210c3335d7ee4974c5c7b236a63ca6b0",
@@ -2163,7 +2163,7 @@
       "parent": "genre",
       "subparent": "Compilation",
       "type": "pictomonochrome",
-      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=yoru25&devpassword=RgsiuVXsg2I&softname=CartRune&ssid=yoru25&sspassword=RgsiuVXsg2I&groupid=34&media=logo-monochrome",
+      "url": "https://neoclone.screenscraper.fr/api2/mediaGroup.php?devid=redacted&devpassword=redacted&softname=CartRune&ssid=redacted&sspassword=redacted&groupid=34&media=logo-monochrome",
       "crc": "c96ce933",
       "md5": "ec2d7f044ed8209fa5dd04eb41b892aa",
       "sha1": "2d4f70fa03fc335432bdc655e5739e8ee36ec532",

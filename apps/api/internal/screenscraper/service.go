@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/YoukaiYoru/api/internal/media"
@@ -16,17 +17,106 @@ import (
 // Service provides higher-level operations over the ScreenScraper client and
 // the local catalog.
 type Service struct {
-	client *Client
-	db     *gorm.DB
+	client      *Client
+	db          *gorm.DB
+	cacheTTL    time.Duration
+	mu          sync.RWMutex
+	searchCache map[string]searchCacheEntry
+	detailCache map[string]detailCacheEntry
+}
+
+type ServiceOptions struct {
+	CacheTTL time.Duration
+}
+
+type searchCacheEntry struct {
+	items     []SearchItem
+	expiresAt time.Time
+}
+
+type detailCacheEntry struct {
+	detail    *DetailResponse
+	expiresAt time.Time
+}
+
+// ImportByQuery enriches the local catalog for scanner fallback. It never
+// adds the imported game to a user's library.
+func (s *Service) ImportByQuery(ctx context.Context, query, platformHint string) (string, error) {
+	if lines := strings.Split(query, "\n"); len(lines) > 0 {
+		query = strings.TrimSpace(lines[0])
+	}
+	digits := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, query)
+	if len(digits) >= 8 {
+		if game, err := s.client.SearchByRomName(ctx, digits); err == nil && game != nil {
+			result, importErr := s.Import(ctx, game.IDInt(), "", "")
+			if importErr != nil {
+				return "", importErr
+			}
+			return result.GameID, nil
+		}
+	}
+	items, err := s.Search(ctx, SearchRequest{Query: query})
+	if err != nil || len(items) == 0 {
+		if err == nil {
+			err = ErrNotFound
+		}
+		return "", err
+	}
+	selected := items[0]
+	if platformHint != "" {
+		for _, item := range items {
+			if strings.Contains(strings.ToLower(item.SystemName), strings.ToLower(platformHint)) {
+				selected = item
+				break
+			}
+		}
+	}
+	result, err := s.Import(ctx, selected.GameID, selected.Region, "")
+	if err != nil {
+		return "", err
+	}
+	return result.GameID, nil
 }
 
 func NewService(client *Client, db *gorm.DB) *Service {
-	return &Service{client: client, db: db}
+	return NewServiceWithOptions(client, db, ServiceOptions{})
+}
+
+func NewServiceWithOptions(client *Client, db *gorm.DB, opts ServiceOptions) *Service {
+	if opts.CacheTTL <= 0 {
+		opts.CacheTTL = 2 * time.Minute
+	}
+	return &Service{
+		client:      client,
+		db:          db,
+		cacheTTL:    opts.CacheTTL,
+		searchCache: make(map[string]searchCacheEntry),
+		detailCache: make(map[string]detailCacheEntry),
+	}
 }
 
 // Search queries ScreenScraper by name and normalizes the results into
 // candidates with a cover URL. systemeID is optional (a hint to narrow search).
 func (s *Service) Search(ctx context.Context, req SearchRequest) ([]SearchItem, error) {
+	req.Query = strings.TrimSpace(req.Query)
+	if req.Query == "" || len([]rune(req.Query)) > 120 {
+		return nil, ErrInvalidQuery
+	}
+	key := fmt.Sprintf("%s|%d|%s|%s", strings.ToLower(req.Query), req.SystemeID, req.Region, req.Language)
+	now := time.Now()
+	s.mu.RLock()
+	if cached, ok := s.searchCache[key]; ok && now.Before(cached.expiresAt) {
+		items := append([]SearchItem(nil), cached.items...)
+		s.mu.RUnlock()
+		return items, nil
+	}
+	s.mu.RUnlock()
+
 	results, err := s.client.SearchByName(ctx, req.Query, req.SystemeID)
 	if err != nil {
 		return nil, err
@@ -34,6 +124,9 @@ func (s *Service) Search(ctx context.Context, req SearchRequest) ([]SearchItem, 
 
 	items := make([]SearchItem, 0, len(results))
 	for _, g := range results {
+		if ok, _ := g.OfficialContent(); !ok {
+			continue
+		}
 		item := SearchItem{
 			GameID:      g.IDInt(),
 			Title:       g.NormalizedTitle(req.Region),
@@ -48,11 +141,27 @@ func (s *Service) Search(ctx context.Context, req SearchRequest) ([]SearchItem, 
 		item.Official, item.FilteredOut = g.OfficialContent()
 		items = append(items, item)
 	}
+	s.mu.Lock()
+	s.searchCache[key] = searchCacheEntry{items: append([]SearchItem(nil), items...), expiresAt: time.Now().Add(s.cacheTTL)}
+	s.mu.Unlock()
 	return items, nil
 }
 
 // Detail fetches full info and media for a given game id, normalized.
 func (s *Service) Detail(ctx context.Context, gameID int, region, language string) (*DetailResponse, error) {
+	if gameID <= 0 {
+		return nil, ErrInvalidQuery
+	}
+	key := fmt.Sprintf("%d|%s|%s", gameID, region, language)
+	now := time.Now()
+	s.mu.RLock()
+	if cached, ok := s.detailCache[key]; ok && now.Before(cached.expiresAt) {
+		detail := cached.detail
+		s.mu.RUnlock()
+		return detail, nil
+	}
+	s.mu.RUnlock()
+
 	g, err := s.client.GameDetail(ctx, gameID)
 	if err != nil {
 		return nil, err
@@ -102,6 +211,9 @@ func (s *Service) Detail(ctx context.Context, gameID int, region, language strin
 			Region: m.Region,
 		})
 	}
+	s.mu.Lock()
+	s.detailCache[key] = detailCacheEntry{detail: res, expiresAt: time.Now().Add(s.cacheTTL)}
+	s.mu.Unlock()
 	return res, nil
 }
 

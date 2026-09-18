@@ -32,6 +32,11 @@ export async function getLibrary(id: string): Promise<LibraryDetail> {
   return unwrap<LibraryDetail>(data);
 }
 
+export async function getPublicLibrary(id: string): Promise<LibraryDetail> {
+	const { data } = await api.get(`/public/libraries/${id}`);
+	return unwrap<LibraryDetail>(data);
+}
+
 export async function updateLibrary(
   id: string,
   input: Partial<CreateLibraryInput>

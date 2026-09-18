@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { theme } from '@/theme';
+import { resolveApiUrl } from '@/services/api';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -62,7 +63,7 @@ export function GameCard({
       <View style={[styles.cover, isSmall && styles.coverSmall]}>
         {coverUrl ? (
           <Image
-            source={{ uri: coverUrl }}
+            source={{ uri: resolveApiUrl(coverUrl) }}
             style={styles.coverImage}
             contentFit="cover"
             transition={150}
@@ -73,7 +74,7 @@ export function GameCard({
         )}
         <View style={styles.coverShine} />
       </View>
-      <Text style={styles.title} numberOfLines={1}>{title}</Text>
+      <Text style={styles.title} numberOfLines={2}>{title}</Text>
       <Text style={styles.platform}>{platform}</Text>
       {progress != null && progress > 0 && (
         <View style={styles.progressTrack}>
@@ -115,8 +116,8 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
-  title: { color: theme.text.primary, fontSize: 12, fontWeight: '600' },
-  platform: { color: theme.text.muted, fontSize: 11, marginTop: 2 },
+  title: { color: theme.text.primary, fontSize: 13, lineHeight: 17, fontWeight: '700' },
+  platform: { color: theme.text.muted, fontSize: 11, marginTop: 3 },
   progressTrack: {
     height: 3,
     backgroundColor: theme.bg.elevated,

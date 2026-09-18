@@ -23,12 +23,13 @@ MODEL_NAME = "mobileclip_s0"
 HF_REPO = "apple/MobileCLIP-S0"
 HF_FILE = "mobileclip_s0.pt"
 EMB_DIM = 512
+LOCAL_CKPT = os.path.join(os.path.dirname(__file__), "models", HF_FILE)
 
 
 class MobileClipEngine:
     def __init__(self, device=None, ckpt_path=None):
         self.device = device or os.getenv("DEVICE", "cpu")
-        ckpt = ckpt_path or os.getenv("MOBILECLIP_CKPT", "")
+        ckpt = ckpt_path or os.getenv("MOBILECLIP_CKPT", "") or LOCAL_CKPT
         if not ckpt or not os.path.exists(ckpt):
             ckpt = self._ensure_checkpoint(ckpt)
         self.ckpt = ckpt
@@ -41,7 +42,7 @@ class MobileClipEngine:
         self.dim = EMB_DIM
 
     def _ensure_checkpoint(self, ckpt):
-        """Descarga el checkpoint desde HuggingFace si no existe localmente."""
+        """Usa el checkpoint local y solo descarga como último recurso."""
         if ckpt and os.path.exists(ckpt):
             return ckpt
         return hf_hub_download(repo_id=HF_REPO, filename=HF_FILE)

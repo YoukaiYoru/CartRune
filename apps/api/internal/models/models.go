@@ -19,6 +19,15 @@ type User struct {
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
+type RefreshToken struct {
+	ID        uuid.UUID  `gorm:"type:uuid;primaryKey" json:"-"`
+	UserID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"-"`
+	TokenHash string     `gorm:"size:64;uniqueIndex;not null" json:"-"`
+	ExpiresAt time.Time  `gorm:"index;not null" json:"-"`
+	RevokedAt *time.Time `gorm:"index" json:"-"`
+	CreatedAt time.Time  `json:"-"`
+}
+
 type Game struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primaryKey" json:"id"`
 	Title       string         `gorm:"size:255;not null" json:"title"`
@@ -61,7 +70,7 @@ type Release struct {
 	Official    bool       `gorm:"default:true" json:"official"`
 	CreatedAt   time.Time  `json:"created_at"`
 
-	Game     Platform `gorm:"foreignKey:PlatformID" json:"game,omitempty"`
+	Game     Game     `gorm:"foreignKey:GameID" json:"game,omitempty"`
 	Platform Platform `gorm:"foreignKey:PlatformID" json:"platform,omitempty"`
 }
 
@@ -95,7 +104,7 @@ type Library struct {
 
 type LibraryGame struct {
 	LibraryID   uuid.UUID  `gorm:"type:uuid;primaryKey" json:"library_id"`
-	GameID      uuid.UUID  `gorm:"type:uuid;not null;index" json:"game_id"`
+	GameID      uuid.UUID  `gorm:"type:uuid;primaryKey;not null;index" json:"game_id"`
 	ReleaseID   *uuid.UUID `gorm:"type:uuid" json:"release_id"`
 	Status      string     `gorm:"size:50;default:'backlog'" json:"status"`
 	Progress    int        `gorm:"default:0" json:"progress"`
@@ -158,4 +167,34 @@ type Activity struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+type ScanMetric struct {
+	ID         uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	UserID     uuid.UUID `gorm:"type:uuid;index" json:"user_id"`
+	Method     string    `gorm:"size:32;index;not null" json:"method"`
+	Outcome    string    `gorm:"size:32;index;not null" json:"outcome"`
+	Fallback   string    `gorm:"size:64" json:"fallback"`
+	Confidence *float64  `json:"confidence,omitempty"`
+	DurationMS int64     `json:"duration_ms"`
+	ErrorCode  string    `gorm:"size:64" json:"error_code,omitempty"`
+	CreatedAt  time.Time `gorm:"index" json:"created_at"`
+}
+
+type DependencyMetric struct {
+	ID         uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	Service    string    `gorm:"size:32;index;not null" json:"service"`
+	Operation  string    `gorm:"size:64;index;not null" json:"operation"`
+	Success    bool      `gorm:"index;not null" json:"success"`
+	Status     int       `json:"status"`
+	DurationMS int64     `json:"duration_ms"`
+	ErrorCode  string    `gorm:"size:64" json:"error_code,omitempty"`
+	CreatedAt  time.Time `gorm:"index" json:"created_at"`
+}
+
+type RateLimitBucket struct {
+	Key             string    `gorm:"size:128;primaryKey" json:"-"`
+	WindowStartedAt time.Time `gorm:"not null" json:"-"`
+	Count           int       `gorm:"not null" json:"-"`
+	UpdatedAt       time.Time `json:"-"`
 }

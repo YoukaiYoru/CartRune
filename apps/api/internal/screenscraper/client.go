@@ -6,11 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/YoukaiYoru/api/internal/observability"
 )
 
 // Client is a thin adapter around the ScreenScraper WebAPI v2.
@@ -31,6 +34,7 @@ type Client struct {
 	lastReq  time.Time
 	minDelay time.Duration
 	maxRetry int
+	metrics  *observability.Recorder
 }
 
 type Options struct {
@@ -40,24 +44,35 @@ type Options struct {
 	SoftName     string
 	UserID       string
 	UserPassword string
+	Timeout      time.Duration
 	MinDelay     time.Duration // min time between requests to respect threads/quota
 	MaxRetry     int
+	Metrics      *observability.Recorder
 }
 
 func New(opts Options) *Client {
-	base := opts.BaseURL
-	if base == "" {
-		base = "https://api.screenscraper.fr/api2/"
+	base := normalizeBaseURL(opts.BaseURL)
+	if opts.SoftName == "" {
+		opts.SoftName = "CartRune"
 	}
-	if opts.MinDelay == 0 {
+	if opts.MinDelay < 0 {
+		opts.MinDelay = 0
+	}
+	if opts.MinDelay == 0 && opts.BaseURL == "" {
 		opts.MinDelay = 1500 * time.Millisecond
+	}
+	if opts.MaxRetry < 0 {
+		opts.MaxRetry = 0
 	}
 	if opts.MaxRetry == 0 {
 		opts.MaxRetry = 2
 	}
+	if opts.Timeout <= 0 {
+		opts.Timeout = 20 * time.Second
+	}
 	return &Client{
 		baseURL:    strings.TrimRight(base, "/") + "/",
-		httpClient: &http.Client{Timeout: 20 * time.Second},
+		httpClient: &http.Client{Timeout: opts.Timeout},
 		devID:      opts.DevID,
 		devPass:    opts.DevPassword,
 		softName:   opts.SoftName,
@@ -65,7 +80,19 @@ func New(opts Options) *Client {
 		ssPass:     opts.UserPassword,
 		minDelay:   opts.MinDelay,
 		maxRetry:   opts.MaxRetry,
+		metrics:    opts.Metrics,
 	}
+}
+
+func normalizeBaseURL(raw string) string {
+	if strings.TrimSpace(raw) == "" {
+		return "https://api.screenscraper.fr/api2/"
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return "https://api.screenscraper.fr/api2/"
+	}
+	return raw
 }
 
 // CredentialsConfigured reports whether developer credentials are present.
@@ -97,6 +124,14 @@ func (c *Client) get(ctx context.Context, endpoint string, q url.Values, out int
 
 	var lastStatus int
 	var lastErr error
+	started := time.Now()
+	log.Printf("[catalog] request started operation=%s", endpoint)
+	defer func() {
+		log.Printf("[catalog] request finished operation=%s status=%d duration_ms=%d", endpoint, lastStatus, time.Since(started).Milliseconds())
+		if c.metrics != nil {
+			c.metrics.RecordDependency(ctx, "screenscraper", endpoint, lastStatus >= 200 && lastStatus < 300, lastStatus, time.Since(started), "")
+		}
+	}()
 	for attempt := 0; attempt <= c.maxRetry; attempt++ {
 		if attempt > 0 {
 			// respect satellite throttling before retrying
@@ -106,7 +141,9 @@ func (c *Client) get(ctx context.Context, endpoint string, q url.Values, out int
 			case <-time.After(time.Duration(attempt) * time.Second):
 			}
 		}
-		c.throttle()
+		if err := c.throttle(ctx); err != nil {
+			return lastStatus, err
+		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 		if err != nil {
@@ -127,6 +164,9 @@ func (c *Client) get(ctx context.Context, endpoint string, q url.Values, out int
 		}
 		lastStatus = resp.StatusCode
 
+		if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+			return resp.StatusCode, ErrProviderAuth
+		}
 		if resp.StatusCode == http.StatusTooManyRequests {
 			lastErr = ErrRateLimited
 			continue
@@ -136,7 +176,13 @@ func (c *Client) get(ctx context.Context, endpoint string, q url.Values, out int
 			if len(snippet) > 200 {
 				snippet = snippet[:200]
 			}
-			return resp.StatusCode, fmt.Errorf("%w: %d %s", ErrUnexpectedStatus, resp.StatusCode, snippet)
+			errType := ErrUnexpectedStatus
+			if shouldRetryStatus(resp.StatusCode) {
+				errType = ErrProviderDown
+				lastErr = fmt.Errorf("%w: %d %s", errType, resp.StatusCode, snippet)
+				continue
+			}
+			return resp.StatusCode, fmt.Errorf("%w: %d %s", errType, resp.StatusCode, snippet)
 		}
 
 		if out != nil {
@@ -153,13 +199,29 @@ func (c *Client) get(ctx context.Context, endpoint string, q url.Values, out int
 }
 
 // throttle enforces the minimum delay between consecutive calls.
-func (c *Client) throttle() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.minDelay > 0 {
-		if since := time.Since(c.lastReq); since < c.minDelay {
-			time.Sleep(c.minDelay - since)
+func (c *Client) throttle(ctx context.Context) error {
+	for {
+		c.mu.Lock()
+		wait := c.minDelay - time.Since(c.lastReq)
+		if wait <= 0 {
+			c.lastReq = time.Now()
+			c.mu.Unlock()
+			return nil
 		}
-		c.lastReq = time.Now()
+		c.mu.Unlock()
+
+		timer := time.NewTimer(wait)
+		select {
+		case <-ctx.Done():
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return ctx.Err()
+		case <-timer.C:
+		}
 	}
+}
+
+func shouldRetryStatus(status int) bool {
+	return status == http.StatusRequestTimeout || status == http.StatusTooManyRequests || status >= 500
 }

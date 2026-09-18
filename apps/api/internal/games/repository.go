@@ -1,6 +1,8 @@
 package games
 
 import (
+	"strings"
+
 	"github.com/YoukaiYoru/api/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -118,7 +120,7 @@ func (r *Repository) GetPrimaryCovers(gameIDs []uuid.UUID) (map[uuid.UUID]models
 
 	var covers []models.Cover
 	err := r.db.
-		Where("game_id IN ? AND primary = true", gameIDs).
+		Where(`game_id IN ? AND "primary" = true`, gameIDs).
 		Find(&covers).Error
 	if err != nil {
 		return nil, err
@@ -165,20 +167,46 @@ func (r *Repository) FindByBarcode(barcode string) ([]models.Game, error) {
 		Joins("JOIN releases ON releases.game_id = games.id").
 		Where("releases.barcode = ?", barcode).
 		Preload("Platforms").
-		Preload("Releases").
+		Preload("Releases", "barcode = ?", barcode).
+		Preload("Releases.Platform").
 		Preload("Covers").
 		Distinct().
 		Find(&games).Error
 	return games, err
 }
 
-func (r *Repository) FindByText(query string) ([]models.Game, error) {
+func (r *Repository) FindByText(query, platformHint string) ([]models.Game, error) {
 	var games []models.Game
-	err := r.db.
-		Where("title ILIKE ?", "%"+query+"%").
+	lines := make([]string, 0, 5)
+	for _, line := range strings.Split(query, "\n") {
+		line = strings.TrimSpace(line)
+		if len([]rune(line)) >= 2 && len(lines) < 5 {
+			lines = append(lines, line)
+		}
+	}
+	if len(lines) == 0 {
+		lines = []string{strings.TrimSpace(query)}
+	}
+	db := r.db
+	clauses := make([]string, 0, len(lines))
+	args := make([]any, 0, len(lines))
+	for _, line := range lines {
+		clauses = append(clauses, "games.title ILIKE ?")
+		args = append(args, "%"+line+"%")
+	}
+	db = db.Where("("+strings.Join(clauses, " OR ")+")", args...)
+	if strings.TrimSpace(platformHint) != "" {
+		db = db.
+			Joins("JOIN releases ON releases.game_id = games.id").
+			Joins("JOIN platforms ON platforms.id = releases.platform_id").
+			Where("platforms.name ILIKE ?", "%"+strings.TrimSpace(platformHint)+"%")
+	}
+	err := db.
 		Preload("Platforms").
 		Preload("Releases").
+		Preload("Releases.Platform").
 		Preload("Covers").
+		Distinct().
 		Limit(10).
 		Find(&games).Error
 	return games, err

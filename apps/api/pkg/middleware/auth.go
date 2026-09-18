@@ -10,7 +10,8 @@ import (
 )
 
 type Claims struct {
-	UserID uuid.UUID `json:"user_id"`
+	UserID    uuid.UUID `json:"user_id"`
+	TokenType string    `json:"token_type"`
 	jwt.RegisteredClaims
 }
 
@@ -28,6 +29,9 @@ func JWTAuth(secret string) fiber.Handler {
 
 		tokenStr := parts[1]
 		token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+			if t.Method != jwt.SigningMethodHS256 {
+				return nil, jwt.ErrTokenSignatureInvalid
+			}
 			return []byte(secret), nil
 		})
 		if err != nil || !token.Valid {
@@ -37,6 +41,9 @@ func JWTAuth(secret string) fiber.Handler {
 		claims, ok := token.Claims.(*Claims)
 		if !ok {
 			return response.Error(c, fiber.StatusUnauthorized, "invalid token claims")
+		}
+		if claims.TokenType != "access" {
+			return response.Error(c, fiber.StatusUnauthorized, "invalid token type")
 		}
 
 		c.Locals("user_id", claims.UserID)

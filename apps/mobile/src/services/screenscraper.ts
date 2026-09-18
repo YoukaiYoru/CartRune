@@ -19,7 +19,7 @@ export interface ScreenScraperSearchInput {
 export async function searchScreenScraper(
   input: ScreenScraperSearchInput
 ): Promise<SearchItem[]> {
-  const { data } = await api.post('/screenscraper/search', input);
+  const { data } = await api.post('/catalog/search', input);
   return unwrap<SearchItem[]>(data);
 }
 
@@ -28,7 +28,7 @@ export async function getScreenScraperGame(
   region?: string,
   language?: string
 ): Promise<ScreenScraperDetail> {
-  const { data } = await api.get(`/screenscraper/games/${ssId}`, {
+  const { data } = await api.get(`/catalog/games/${ssId}`, {
     params: { region, language },
   });
   return unwrap<ScreenScraperDetail>(data);
@@ -39,7 +39,7 @@ export async function importScreenScraperGame(
   region?: string,
   language?: string
 ): Promise<ImportResponse> {
-  const { data } = await api.post(`/screenscraper/games/${ssId}/import`, null, {
+  const { data } = await api.post(`/catalog/games/${ssId}/import`, null, {
     params: { region, language },
   });
   return unwrap<ImportResponse>(data);

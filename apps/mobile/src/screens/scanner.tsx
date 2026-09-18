@@ -11,15 +11,17 @@ import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { BarcodeType } from 'expo-camera';
 import { Image } from 'expo-image';
-import { embedPhoto } from '@/services/embeddings';
+import { analyzeCover, embedPhoto } from '@/services/embeddings';
 import { setEmbedding } from '@/lib/embedding-cache';
 import { matchEmbedding, scanText } from '@/services/scanner';
 import type { MatchResult } from '@/services/types';
 import { isOcrAvailable, recognizeTextSafe } from '@/lib/mlkit';
 import { theme } from '@/theme';
+import { resolveApiUrl } from '@/services/api';
 import Animated, { FadeInUp, SlideInUp } from 'react-native-reanimated';
 
 type ScanMethod = 'barcode' | 'text' | 'embedding';
+type ProcessingStep = 'capture' | 'upload' | 'visual' | 'metadata' | 'catalog';
 
 const BARCODE_TYPES: BarcodeType[] = ['ean13', 'ean8', 'upc_a', 'upc_e'];
 const LIVE_INTERVAL_MS = 2500;
@@ -32,10 +34,11 @@ export function Scanner({ preset }: { preset?: string }) {
   const [activeMethod, setActiveMethod] = useState<ScanMethod | null>(
     preset && (preset === 'barcode' || preset === 'text' || preset === 'embedding')
       ? preset
-      : null
+      : 'embedding'
   );
   const [showOptions, setShowOptions] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [processingStep, setProcessingStep] = useState<ProcessingStep | null>(null);
   const [ocrUnavailable, setOcrUnavailable] = useState(false);
   const handledRef = useRef(false);
 
@@ -91,12 +94,14 @@ export function Scanner({ preset }: { preset?: string }) {
         } else if (activeMethod === 'text') {
           const text = await recognizeTextSafe(photo.uri);
           if (!cancelled && text) {
-            const firstLine = text
+            const ocrLines = text
               .split('\n')
               .map((l) => l.trim())
-              .find((l) => l.length > 0);
-            if (firstLine) {
-              const res = await scanText(firstLine);
+              .filter((l) => l.length > 1)
+              .slice(0, 5)
+              .join('\n');
+            if (ocrLines) {
+              const res = await scanText(ocrLines);
               const top = res.matches[0] ?? null;
               setLiveResult(top);
               setLiveStatus(top ? 'found' : 'notfound');
@@ -162,36 +167,47 @@ export function Scanner({ preset }: { preset?: string }) {
   const handleCapture = async () => {
     if (isCapturing || !cameraRef.current || liveActive) return;
     setIsCapturing(true);
+    setProcessingStep('capture');
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
+      console.info(`[scanner] cover captured method=${activeMethod}`);
       handledRef.current = true;
       stopLive();
+      setProcessingStep('upload');
 
       if (activeMethod === 'text') {
         if (!isOcrAvailable()) {
           setOcrUnavailable(true);
+          setIsCapturing(false);
           return;
         }
         try {
           const text = await recognizeTextSafe(photo.uri);
           if (text === null) {
             setOcrUnavailable(true);
+            setIsCapturing(false);
+            setProcessingStep(null);
             return;
           }
-          const firstLine = text
+          setProcessingStep('catalog');
+          const ocrLines = text
             .split('\n')
             .map((l) => l.trim())
-            .find((l) => l.length > 0);
+            .filter((l) => l.length > 1)
+            .slice(0, 5)
+            .join('\n');
+          setProcessingStep(null);
           router.push({
             pathname: '/scanner/results',
             params: {
               method: 'text',
               photo: photo.uri,
-              ...(firstLine ? { value: firstLine } : {}),
+              ...(ocrLines ? { value: ocrLines } : {}),
             },
           });
           return;
         } catch {
+          setProcessingStep(null);
           router.push({
             pathname: '/scanner/results',
             params: { method: 'text', photo: photo.uri },
@@ -202,13 +218,25 @@ export function Scanner({ preset }: { preset?: string }) {
 
       if (activeMethod === 'embedding') {
         try {
+          // MobileCLIP y Qwen son inferencias pesadas en el mismo servidor.
+          // Secuenciarlas evita que compitan por CPU/RAM y provoquen timeouts.
+          setProcessingStep('visual');
           const embedding = await embedPhoto(photo.uri);
+          setProcessingStep('metadata');
+          const analysis = await analyzeCover(photo.uri).catch(() => null);
+          setProcessingStep('catalog');
           setEmbedding(photo.uri, embedding);
+          setProcessingStep(null);
           router.push({
             pathname: '/scanner/results',
-            params: { method: 'embedding', photo: photo.uri },
+            params: {
+              method: 'embedding',
+              photo: photo.uri,
+              ...(analysis ? { analysis: JSON.stringify(analysis) } : {}),
+            },
           });
         } catch (err) {
+          setProcessingStep(null);
           router.push({
             pathname: '/scanner/results',
             params: {
@@ -228,6 +256,7 @@ export function Scanner({ preset }: { preset?: string }) {
       });
     } catch {
       setIsCapturing(false);
+      setProcessingStep(null);
     }
   };
 
@@ -271,6 +300,7 @@ export function Scanner({ preset }: { preset?: string }) {
 
         <View style={styles.overlayGlow}>
           <View style={styles.targetFrame} />
+          <Text style={styles.scanModeLabel}>{activeMethod ? activeMethod.toUpperCase() : 'COVER SCANNER'}</Text>
           <Text style={styles.overlayHint}>
             {activeMethod === 'barcode'
               ? 'Point at the barcode on the box'
@@ -296,15 +326,15 @@ export function Scanner({ preset }: { preset?: string }) {
 
               {liveStatus === 'error' ? (
                 <View style={styles.liveError}>
-                  <Text style={styles.liveErrorTitle}>Embedding service offline</Text>
+                  <Text style={styles.liveErrorTitle}>Cover analysis unavailable</Text>
                   <Text style={styles.liveErrorText}>
-                    Keep trying automatically, or scan in barcode mode.
+                    Try again, or use barcode mode.
                   </Text>
                 </View>
               ) : liveStatus === 'found' && liveResult ? (
                 <Pressable style={styles.liveCard} onPress={openLiveResults}>
                   {liveResult.cover_url ? (
-                    <Image source={{ uri: liveResult.cover_url }} style={styles.liveCover} />
+                    <Image source={{ uri: resolveApiUrl(liveResult.cover_url) }} style={styles.liveCover} />
                   ) : (
                     <View style={styles.liveCoverPlaceholder}>
                       <Text style={styles.liveCoverEmoji}>🎮</Text>
@@ -330,7 +360,7 @@ export function Scanner({ preset }: { preset?: string }) {
                   <ActivityIndicator size="small" color={theme.accent.warm} />
                   <Text style={styles.liveSearchingText}>
                     {liveStatus === 'notfound'
-                      ? 'No match yet — keep pointing the camera'
+                      ? 'No match yet. Keep pointing the camera'
                       : 'Looking for a match...'}
                   </Text>
                 </View>
@@ -343,7 +373,7 @@ export function Scanner({ preset }: { preset?: string }) {
       {!activeMethod ? (
         <Animated.View entering={FadeInUp.delay(200).springify()}>
           <Pressable style={styles.scanButton} onPress={() => setShowOptions(true)}>
-            <Text style={styles.scanButtonText}>SCAN GAME</Text>
+            <Text style={styles.scanButtonText}>START SCAN</Text>
           </Pressable>
         </Animated.View>
       ) : null}
@@ -375,8 +405,8 @@ export function Scanner({ preset }: { preset?: string }) {
       {ocrUnavailable && (
         <View style={styles.ocrWarning}>
           <Text style={styles.ocrWarningText}>
-            No text was detected. Make sure the embeddings service (port 8700)
-            is reachable from your phone and cover is well-lit, then try again.
+			No text was detected. Make sure the catalog services are reachable
+			and the cover is well-lit, then try again.
           </Text>
         </View>
       )}
@@ -415,8 +445,8 @@ export function Scanner({ preset }: { preset?: string }) {
             <Pressable style={styles.optionCard} onPress={() => resetScan('embedding')}>
               <Text style={styles.optionIcon}>🧠</Text>
               <View style={styles.optionInfo}>
-                <Text style={styles.optionTitle}>Visual Match</Text>
-                <Text style={styles.optionDesc}>AI-powered live recognition</Text>
+                <Text style={styles.optionTitle}>Cover Match</Text>
+                <Text style={styles.optionDesc}>Match the cover artwork</Text>
               </View>
             </Pressable>
 
@@ -426,6 +456,80 @@ export function Scanner({ preset }: { preset?: string }) {
           </Animated.View>
         </Pressable>
       </Modal>
+
+      <Modal
+        visible={processingStep !== null}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => undefined}
+      >
+        <View style={styles.processingBackdrop}>
+          <View style={styles.processingCard}>
+            <View style={styles.processingBadge}>
+              <Text style={styles.processingBadgeText}>CARTRUNE SCANNER</Text>
+            </View>
+            <ActivityIndicator size="large" color={theme.accent.primary} />
+            <Text style={styles.processingTitle}>Reading your shelf find</Text>
+            <Text style={styles.processingSubtitle}>
+              Keep this screen open while we identify the cover.
+            </Text>
+
+            <ProcessingRow
+              icon="📸"
+              label="Photo captured"
+              active={processingStep === 'capture'}
+              complete={['upload', 'visual', 'metadata', 'catalog'].includes(processingStep ?? '')}
+            />
+            <ProcessingRow
+              icon="↑"
+              label="Sending cover securely"
+              active={processingStep === 'upload'}
+              complete={['visual', 'metadata', 'catalog'].includes(processingStep ?? '')}
+            />
+            <ProcessingRow
+              icon="◈"
+              label="Comparing artwork"
+              active={processingStep === 'visual'}
+              complete={['metadata', 'catalog'].includes(processingStep ?? '')}
+            />
+            <ProcessingRow
+              icon="✦"
+              label="Reading title and console"
+              active={processingStep === 'metadata'}
+              complete={processingStep === 'catalog'}
+            />
+            <ProcessingRow
+              icon="⌕"
+              label="Preparing catalog search"
+              active={processingStep === 'catalog'}
+              complete={false}
+            />
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+function ProcessingRow({
+  icon,
+  label,
+  active,
+  complete,
+}: {
+  icon: string;
+  label: string;
+  active: boolean;
+  complete: boolean;
+}) {
+  return (
+    <View style={styles.processingRow}>
+      <View style={[styles.processingIcon, complete && styles.processingIconComplete]}>
+        <Text style={styles.processingIconText}>{complete ? '✓' : icon}</Text>
+      </View>
+      <Text style={[styles.processingLabel, active && styles.processingLabelActive]}>{label}</Text>
+      {active ? <ActivityIndicator size="small" color={theme.accent.warm} /> : null}
     </View>
   );
 }
@@ -459,6 +563,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     marginTop: 16,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowRadius: 6,
+  },
+  scanModeLabel: {
+    color: theme.accent.muted,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 8,
     textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowRadius: 6,
   },
@@ -682,4 +795,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelText: { color: theme.accent.warm, fontSize: 15, fontWeight: '600' },
+  processingBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(9, 8, 14, 0.88)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  processingCard: {
+    width: '100%',
+    maxWidth: 390,
+    backgroundColor: theme.bg.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.border.default,
+    padding: 24,
+    shadowColor: theme.shelf.shadow,
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+  },
+  processingBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: theme.bg.surface,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    marginBottom: 24,
+  },
+  processingBadgeText: { color: theme.accent.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1.4 },
+  processingTitle: {
+    color: theme.text.primary,
+    fontSize: 21,
+    fontWeight: '800',
+    marginTop: 18,
+    textAlign: 'center',
+  },
+  processingSubtitle: {
+    color: theme.text.muted,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 7,
+    marginBottom: 22,
+    textAlign: 'center',
+  },
+  processingRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: theme.border.subtle,
+  },
+  processingIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: theme.bg.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  processingIconComplete: { backgroundColor: theme.accent.primary },
+  processingIconText: { color: theme.text.primary, fontSize: 14, fontWeight: '800' },
+  processingLabel: { color: theme.text.muted, fontSize: 13, flex: 1 },
+  processingLabelActive: { color: theme.text.primary, fontWeight: '700' },
 });

@@ -29,9 +29,22 @@ func (r *Repository) FindByID(id uuid.UUID) (*models.Library, error) {
 	return &lib, nil
 }
 
+func (r *Repository) FindPublicByID(id uuid.UUID) (*models.Library, error) {
+	var lib models.Library
+	err := r.db.
+		Preload("Games").
+		Preload("Games.Game").
+		Preload("Games.Game.Covers").
+		Preload("Games.Release").
+		Preload("Games.Release.Platform").
+		Where("id = ? AND is_public = true", id).
+		First(&lib).Error
+	return &lib, err
+}
+
 func (r *Repository) FindByUserID(userID uuid.UUID) ([]models.Library, error) {
 	var libs []models.Library
-	err := r.db.Where("user_id = ?", userID).Order("created_at DESC").Find(&libs).Error
+	err := r.db.Preload("Games").Where("user_id = ?", userID).Order("created_at DESC").Find(&libs).Error
 	return libs, err
 }
 
@@ -49,6 +62,18 @@ func (r *Repository) Delete(id uuid.UUID) error {
 
 func (r *Repository) AddGame(lg *models.LibraryGame) error {
 	return r.db.Create(lg).Error
+}
+
+func (r *Repository) FindGame(id uuid.UUID) (*models.Game, error) {
+	var game models.Game
+	err := r.db.First(&game, "id = ?", id).Error
+	return &game, err
+}
+
+func (r *Repository) FindReleaseForGame(releaseID, gameID uuid.UUID) (*models.Release, error) {
+	var release models.Release
+	err := r.db.Preload("Platform").Where("id = ? AND game_id = ?", releaseID, gameID).First(&release).Error
+	return &release, err
 }
 
 func (r *Repository) RemoveGame(libraryID, gameID uuid.UUID) error {

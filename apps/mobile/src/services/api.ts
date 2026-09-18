@@ -4,7 +4,15 @@ import { tokenStorage } from '@/services/auth';
 
 const FALLBACK_HOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
 const HOST = process.env.EXPO_PUBLIC_API_HOST || FALLBACK_HOST;
-const API_BASE = `http://${HOST}:8080/api/v1`;
+export const API_BASE = `http://${HOST}:8080/api/v1`;
+
+/** Resolve API-relative media paths before native image/video components use them. */
+export function resolveApiUrl(value?: string | null): string | undefined {
+  if (!value) return undefined;
+  if (/^https?:\/\//i.test(value)) return value;
+  const path = value.startsWith('/') ? value : `/${value}`;
+  return `${API_BASE.replace(/\/api\/v1$/, '')}${path}`;
+}
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -16,6 +24,11 @@ api.interceptors.request.use(async (config) => {
   const token = await tokenStorage.getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Axios/React Native must generate the multipart boundary itself. A fixed
+  // Content-Type without that boundary makes FastAPI reject Expo Go photos.
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
   }
   return config;
 });
