@@ -21,6 +21,11 @@ type SearchItem struct {
 	Note        int    `json:"note,omitempty"`
 	Official    bool   `json:"official"`
 	FilteredOut string `json:"filtered_out,omitempty"`
+
+	// source keeps the provider object for server-side imports. It is never
+	// serialized; jeuRecherche already contains the media needed to import a
+	// cover without an extra jeuInfos.php request.
+	source *GameInfo
 }
 
 // CoverData represents one cover/media found for a game.

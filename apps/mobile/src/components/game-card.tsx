@@ -65,7 +65,7 @@ export function GameCard({
           <Image
             source={{ uri: resolveApiUrl(coverUrl) }}
             style={styles.coverImage}
-            contentFit="cover"
+            contentFit="contain"
             transition={150}
             placeholder={BLURHASH}
           />

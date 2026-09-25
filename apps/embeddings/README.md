@@ -1,9 +1,9 @@
 # Embeddings y Qdrant
 
-El scanner usa dos señales: MobileCLIP para comparar la imagen y Qwen2-VL para
-extraer título, consola, región, edición y publisher. Qwen2-VL se sirve desde
-vLLM mediante su API compatible con OpenAI; el servicio de embeddings no carga
-el modelo ni guarda las imágenes.
+El scanner usa MobileCLIP para comparar la imagen y un analizador visual
+opcional para extraer título, consola, región, edición y publisher. El
+analizador puede usar Ollama o vLLM; el servicio de embeddings no guarda las
+imágenes.
 
 Instalación local (PM2):
 
@@ -13,27 +13,45 @@ python -m pip install -r requirements.txt
 python service.py
 ```
 
-Para desactivar el análisis visual de Qwen2-VL sin perder el match visual:
+Para trabajar solo con MobileCLIP + OCR:
 
 ```bash
-VLLM_ENABLED=0 python service.py
+VISION_PROVIDER=disabled python service.py
+
+Para usar el Ollama local que ya tienes:
+
+```bash
+ollama serve # si todavía no está ejecutándose
+VISION_PROVIDER=ollama \
+OLLAMA_MODEL=gemma3:4b \
+python service.py
 ```
 
-Inicia vLLM con el modelo del repositorio `xwjim/Qwen2-VL`:
+Ollama expone el analizador en `http://127.0.0.1:11434/api/chat`. El servicio
+convierte la imagen a Base64 en memoria y devuelve siempre el contrato JSON de
+CartRune.
+```
+
+En una GPU de 4 GB usa el checkpoint cuantizado de 2B:
 
 ```bash
 python -m vllm.entrypoints.openai.api_server \
-  --model Qwen/Qwen2-VL-7B-Instruct \
-  --served-model-name Qwen2-VL-7B-Instruct \
-  --host 0.0.0.0 \
-  --port 8000
+  --model Qwen/Qwen2-VL-2B-Instruct-AWQ \
+  --served-model-name Qwen/Qwen2-VL-2B-Instruct-AWQ \
+  --host 127.0.0.1 \
+  --port 8000 \
+  --dtype float16 \
+  --max-model-len 512 \
+  --max-num-seqs 1 \
+  --enforce-eager \
+  --gpu-memory-utilization 0.65
 ```
 
 Luego configura el servicio de embeddings:
 
 ```env
 VLLM_BASE_URL=http://localhost:8000/v1
-VLLM_MODEL=Qwen2-VL-7B-Instruct
+VLLM_MODEL=Qwen/Qwen2-VL-2B-Instruct-AWQ
 VLLM_API_KEY=
 ```
 

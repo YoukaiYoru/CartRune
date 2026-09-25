@@ -1,0 +1,62 @@
+{
+  "root": "/home/yoru/Desktop/Proyectos/CartRune/apps/mobile/src",
+  "files_scanned": 57,
+  "passed": false,
+  "states": {
+    "loading": {
+      "present": true,
+      "matched_terms": [
+        "/loading/i",
+        "/pending/i"
+      ]
+    },
+    "empty": {
+      "present": true,
+      "matched_terms": [
+        "/empty/i"
+      ]
+    },
+    "error": {
+      "present": true,
+      "matched_terms": [
+        "/error/i",
+        "/failed/i",
+        "/catch\\s*\\(/i"
+      ]
+    },
+    "disabled": {
+      "present": true,
+      "matched_terms": [
+        "/disabled/i"
+      ]
+    },
+    "focus": {
+      "present": false,
+      "matched_terms": []
+    },
+    "selected": {
+      "present": true,
+      "matched_terms": [
+        "/selected/i"
+      ]
+    },
+    "submitting": {
+      "present": true,
+      "matched_terms": [
+        "/saving/i"
+      ]
+    },
+    "success": {
+      "present": true,
+      "matched_terms": [
+        "/success/i",
+        "/saved/i",
+        "/complete/i"
+      ]
+    }
+  },
+  "missing": [
+    "focus"
+  ],
+  "note": "Missing markers require manual review; absence of a term is not proof the state is absent."
+}

@@ -55,7 +55,7 @@ export async function ocrPhoto(uri: string): Promise<string | null> {
 }
 
 export async function analyzeCover(uri: string): Promise<CoverAnalysis> {
-  console.info('[scanner] cover analysis started: Qwen metadata');
+  console.info('[scanner] cover analysis started: vision metadata');
   const form = new FormData();
   form.append('image', { uri, name: 'cover.jpg', type: 'image/jpeg' } as unknown as Blob);
   const { data } = await api.post<CoverAnalysis>('/scanner/analyze', form, {
@@ -64,6 +64,6 @@ export async function analyzeCover(uri: string): Promise<CoverAnalysis> {
     signal: withTimeout(180000),
   });
   if (!data || typeof data.title !== 'string') throw new Error('invalid cover analysis response');
-  console.info(`[scanner] cover analysis finished: Qwen (${data.title || 'no title'})`);
+  console.info(`[scanner] cover analysis finished: vision (${data.title || 'no title'})`);
   return data;
 }

@@ -43,27 +43,30 @@ def make_dsn():
 
 
 def covers_to_index(cur):
-    """Portadas primarias con datos del juego y su plataforma principal."""
+    """Index physical cover variants with their exact release metadata."""
     sql = """
         SELECT c.id::text,
                g.id::text  AS game_id,
-               r.id::text  AS release_id,
+               COALESCE(r.id, fallback.id)::text AS release_id,
                g.title,
-               p.name      AS platform,
-               r.region
+               COALESCE(p.name, fallback_platform.name) AS platform,
+               COALESCE(r.region, fallback.region) AS region
         FROM covers c
         JOIN games g  ON g.id = c.game_id
+        LEFT JOIN releases r ON r.id = c.release_id
+        LEFT JOIN platforms p ON p.id = r.platform_id
         LEFT JOIN LATERAL (
             SELECT r2.id, r2.region, r2.platform_id
             FROM releases r2
             WHERE r2.game_id = g.id
             ORDER BY r2.official DESC, r2.created_at ASC
             LIMIT 1
-        ) r ON TRUE
-        LEFT JOIN platforms p ON p.id = r.platform_id
-        WHERE c.primary = TRUE
-          AND c.url <> ''
-        ORDER BY g.created_at DESC
+        ) fallback ON r.id IS NULL
+        LEFT JOIN platforms fallback_platform ON fallback_platform.id = fallback.platform_id
+        WHERE c.url <> ''
+          AND (c.primary = TRUE OR c.type LIKE 'box%' OR c.type LIKE 'support%')
+          AND COALESCE(r.id, fallback.id) IS NOT NULL
+        ORDER BY g.created_at DESC, c.id ASC
     """
     cur.execute(sql)
     rows = cur.fetchall()

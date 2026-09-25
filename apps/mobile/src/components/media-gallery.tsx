@@ -75,7 +75,7 @@ export function MediaGallery({ detail, isLoading }: Props) {
               key={`${m.key}-${i}`}
               source={{ uri: resolveApiUrl(m.url) }}
               style={styles.thumb}
-              contentFit="cover"
+              contentFit="contain"
             />
           ))}
         </ScrollView>

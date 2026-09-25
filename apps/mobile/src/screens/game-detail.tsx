@@ -31,8 +31,10 @@ export function GameDetail({ id }: { id: string }) {
     );
   }
 
-  const primaryCover = game.covers.find((c) => c.primary) ?? game.covers[0];
-  const platformNames = game.platforms.map((p) => p.name).join(', ');
+  const covers = game.covers ?? [];
+  const platforms = game.platforms ?? [];
+  const primaryCover = covers.find((c) => c.primary) ?? covers[0];
+  const platformNames = platforms.map((p) => p.name).join(', ');
   const libraryGame = library?.games.find((g) => g.game_id === game.id);
   const alreadyAdded = !!libraryGame;
   const releaseDate = game.release_date
@@ -54,7 +56,7 @@ export function GameDetail({ id }: { id: string }) {
             <Image
               source={{ uri: resolveApiUrl(primaryCover.url) }}
               style={styles.coverImage}
-              contentFit="cover"
+              contentFit="contain"
               transition={200}
             />
           ) : (

@@ -41,16 +41,17 @@ type ReleaseResponse struct {
 }
 
 type CoverResponse struct {
-	ID       string `json:"id"`
-	GameID   string `json:"game_id"`
-	URL      string `json:"url"`
-	Region   string `json:"region"`
-	Language string `json:"language"`
-	Type     string `json:"type"`
-	Width    int    `json:"width"`
-	Height   int    `json:"height"`
-	Source   string `json:"source"`
-	Primary  bool   `json:"primary"`
+	ID        string `json:"id"`
+	GameID    string `json:"game_id"`
+	ReleaseID string `json:"release_id,omitempty"`
+	URL       string `json:"url"`
+	Region    string `json:"region"`
+	Language  string `json:"language"`
+	Type      string `json:"type"`
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
+	Source    string `json:"source"`
+	Primary   bool   `json:"primary"`
 }
 
 type SearchRequest struct {

@@ -67,6 +67,32 @@ func TestClientMapsProviderAuthenticationFailure(t *testing.T) {
 	}
 }
 
+func TestGameDetailUsesGameIDBeforeSystemHint(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		q := r.URL.Query()
+		if q.Get("gameid") != "5857" {
+			t.Fatalf("gameid = %q, want 5857", q.Get("gameid"))
+		}
+		if q.Get("systemeid") != "" {
+			t.Fatalf("systemeid should not be sent on the canonical request, got %q", q.Get("systemeid"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"header":{"error":""},"response":{"jeu":{"id":"5857","noms":[{"region":"ss","text":"Final Fantasy"}],"systeme":{"id":"15","text":"Nintendo DS"}}}}`))
+	}))
+	defer server.Close()
+
+	client := New(Options{BaseURL: server.URL, DevID: "dev", DevPassword: "pass", MinDelay: 0})
+	game, err := client.GameDetailForSystem(context.Background(), 5857, 15)
+	if err != nil {
+		t.Fatalf("GameDetailForSystem returned error: %v", err)
+	}
+	if game.IDInt() != 5857 || calls.Load() != 1 {
+		t.Fatalf("game = %#v, calls = %d, want game 5857 and one request", game, calls.Load())
+	}
+}
+
 func TestServiceCachesSearchesWithinTTL(t *testing.T) {
 	var calls atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

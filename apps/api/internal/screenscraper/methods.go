@@ -2,6 +2,7 @@ package screenscraper
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -56,22 +57,48 @@ func (c *Client) SearchByRomName(ctx context.Context, romName string) (*GameInfo
 
 // GameDetail calls jeuInfos.php forcing the search by numeric game id.
 func (c *Client) GameDetail(ctx context.Context, gameID int) (*GameInfo, error) {
+	return c.GameDetailForSystem(ctx, gameID, 0)
+}
+
+// GameDetailForSystem fetches a game with an optional ScreenScraper system id.
+// Some provider nodes resolve a game id more reliably when both identifiers
+// are present, especially for multi-platform titles.
+func (c *Client) GameDetailForSystem(ctx context.Context, gameID, systemID int) (*GameInfo, error) {
 	q := c.baseQuery()
 	q.Set("gameid", strconv.Itoa(gameID))
 
 	var res APIResponse
 	status, err := c.get(ctx, "jeuInfos.php", q, &res)
-	if err != nil {
+	if err == nil && status == http.StatusOK && res.Header.Error == "" && res.Response.Jeu != nil {
+		return res.Response.Jeu, nil
+	}
+	if err != nil && !errors.Is(err, ErrNotFound) {
 		return nil, err
 	}
-	if status == http.StatusNotFound {
+	if res.Header.Error != "" {
+		err = classifyProviderError(res.Header.Error)
+	}
+	if err == nil || status == http.StatusNotFound {
+		err = ErrNotFound
+	}
+
+	// ScreenScraper documents gameid as sufficient for jeuInfos.php. Some
+	// provider nodes historically required systemeid as well, so keep a single
+	// compatibility retry, but never make it the primary request.
+	if systemID <= 0 || !errors.Is(err, ErrNotFound) {
+		return nil, err
+	}
+	q.Set("systemeid", strconv.Itoa(systemID))
+	res = APIResponse{}
+	status, retryErr := c.get(ctx, "jeuInfos.php", q, &res)
+	if retryErr != nil {
+		return nil, retryErr
+	}
+	if status == http.StatusNotFound || res.Response.Jeu == nil {
 		return nil, ErrNotFound
 	}
 	if res.Header.Error != "" {
 		return nil, classifyProviderError(res.Header.Error)
-	}
-	if res.Response.Jeu == nil {
-		return nil, ErrNotFound
 	}
 	return res.Response.Jeu, nil
 }

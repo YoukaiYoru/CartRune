@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,15 @@ import {
   Pressable,
   Modal,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { BarcodeType } from 'expo-camera';
 import { Image } from 'expo-image';
 import { analyzeCover, embedPhoto } from '@/services/embeddings';
 import { setEmbedding } from '@/lib/embedding-cache';
+import { rememberScanCapture } from '@/lib/scan-capture';
 import { matchEmbedding, scanText } from '@/services/scanner';
 import type { MatchResult } from '@/services/types';
 import { isOcrAvailable, recognizeTextSafe } from '@/lib/mlkit';
@@ -29,6 +31,7 @@ const LIVE_START_DELAY_MS = 500;
 
 export function Scanner({ preset }: { preset?: string }) {
   const router = useRouter();
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [activeMethod, setActiveMethod] = useState<ScanMethod | null>(
@@ -49,8 +52,29 @@ export function Scanner({ preset }: { preset?: string }) {
   >('idle');
   const [liveResult, setLiveResult] = useState<MatchResult | null>(null);
   const [livePhoto, setLivePhoto] = useState<string | null>(null);
+  const [cameraEpoch, setCameraEpoch] = useState(0);
   const liveLoopRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Returning from results must provide a fresh camera session. On Android,
+  // keeping the previous CameraView mounted can leave capture locked after a
+  // successful photo/navigation cycle.
+  useFocusEffect(
+    useCallback(() => {
+      handledRef.current = false;
+      setIsCapturing(false);
+      setProcessingStep(null);
+      setLiveActive(false);
+      setLiveStatus('idle');
+      setLiveResult(null);
+      setLivePhoto(null);
+      setCameraEpoch((value) => value + 1);
+      return () => {
+        liveLoopRef.current = false;
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      };
+    }, [])
+  );
 
   useEffect(() => {
     if (!preset) return;
@@ -67,6 +91,10 @@ export function Scanner({ preset }: { preset?: string }) {
   const liveSupported =
     activeMethod === 'embedding' ||
     (activeMethod === 'text' && isOcrAvailable());
+  // A physical game case is close to a 3:4 portrait rectangle. This guide
+  // adapts to the viewport while leaving room for the camera controls.
+  const frameWidth = Math.min(viewportWidth * 0.64, 242);
+  const frameHeight = Math.min(frameWidth / 0.78, viewportHeight * 0.40);
 
   // Continuous live scan loop (Google Lens style). Takes a photo, analyzes it
   // and shows the top match on the camera view without leaving the screen.
@@ -147,9 +175,10 @@ export function Scanner({ preset }: { preset?: string }) {
 
   const openLiveResults = () => {
     if (activeMethod && livePhoto) {
+      const captureKey = rememberScanCapture(livePhoto);
       router.push({
         pathname: '/scanner/results',
-        params: { method: activeMethod, photo: livePhoto },
+        params: { method: activeMethod, capture_key: captureKey },
       });
     }
   };
@@ -176,6 +205,7 @@ export function Scanner({ preset }: { preset?: string }) {
       setProcessingStep('upload');
 
       if (activeMethod === 'text') {
+        const captureKey = rememberScanCapture(photo.uri);
         if (!isOcrAvailable()) {
           setOcrUnavailable(true);
           setIsCapturing(false);
@@ -201,7 +231,7 @@ export function Scanner({ preset }: { preset?: string }) {
             pathname: '/scanner/results',
             params: {
               method: 'text',
-              photo: photo.uri,
+              capture_key: captureKey,
               ...(ocrLines ? { value: ocrLines } : {}),
             },
           });
@@ -210,20 +240,27 @@ export function Scanner({ preset }: { preset?: string }) {
           setProcessingStep(null);
           router.push({
             pathname: '/scanner/results',
-            params: { method: 'text', photo: photo.uri },
+            params: { method: 'text', capture_key: captureKey },
           });
           return;
         }
       }
 
       if (activeMethod === 'embedding') {
+        const captureKey = rememberScanCapture(photo.uri);
         try {
           // MobileCLIP y Qwen son inferencias pesadas en el mismo servidor.
           // Secuenciarlas evita que compitan por CPU/RAM y provoquen timeouts.
           setProcessingStep('visual');
           const embedding = await embedPhoto(photo.uri);
           setProcessingStep('metadata');
-          const analysis = await analyzeCover(photo.uri).catch(() => null);
+          const analysis = await analyzeCover(photo.uri)
+            .then((value) =>
+              value.title || value.console || value.region || value.edition || value.publisher
+                ? value
+                : null
+            )
+            .catch(() => null);
           setProcessingStep('catalog');
           setEmbedding(photo.uri, embedding);
           setProcessingStep(null);
@@ -231,7 +268,8 @@ export function Scanner({ preset }: { preset?: string }) {
             pathname: '/scanner/results',
             params: {
               method: 'embedding',
-              photo: photo.uri,
+              capture_key: captureKey,
+              embedding: JSON.stringify(embedding),
               ...(analysis ? { analysis: JSON.stringify(analysis) } : {}),
             },
           });
@@ -241,7 +279,7 @@ export function Scanner({ preset }: { preset?: string }) {
             pathname: '/scanner/results',
             params: {
               method: 'embedding',
-              photo: photo.uri,
+              capture_key: captureKey,
               failed: '1',
               error: err instanceof Error ? err.message : String(err),
             },
@@ -252,7 +290,7 @@ export function Scanner({ preset }: { preset?: string }) {
 
       router.push({
         pathname: '/scanner/results',
-        params: { method: activeMethod!, photo: photo.uri },
+        params: { method: activeMethod!, capture_key: rememberScanCapture(photo.uri) },
       });
     } catch {
       setIsCapturing(false);
@@ -291,6 +329,7 @@ export function Scanner({ preset }: { preset?: string }) {
     <View style={styles.container}>
       <View style={styles.cameraWrap}>
         <CameraView
+          key={`camera-${cameraEpoch}`}
           ref={cameraRef}
           style={StyleSheet.absoluteFill}
           facing="back"
@@ -299,15 +338,23 @@ export function Scanner({ preset }: { preset?: string }) {
         />
 
         <View style={styles.overlayGlow}>
-          <View style={styles.targetFrame} />
+          <View style={[styles.targetFrame, { width: frameWidth, height: frameHeight }]}>
+            <View style={styles.targetCornerTopLeft} />
+            <View style={styles.targetCornerTopRight} />
+            <View style={styles.targetCornerBottomLeft} />
+            <View style={styles.targetCornerBottomRight} />
+          </View>
           <Text style={styles.scanModeLabel}>{activeMethod ? activeMethod.toUpperCase() : 'COVER SCANNER'}</Text>
           <Text style={styles.overlayHint}>
             {activeMethod === 'barcode'
               ? 'Point at the barcode on the box'
               : activeMethod === 'text'
-                ? 'Center the cover title in the frame'
-                : 'Center the game cover in the frame'}
+                ? 'Align the cover edges inside the frame'
+                : 'Align the four cover edges inside the frame'}
           </Text>
+          {activeMethod !== 'barcode' ? (
+            <Text style={styles.overlayDistance}>Move closer until one cover fills the frame</Text>
+          ) : null}
 
           {/* Live Lens result overlay */}
           {liveActive && (
@@ -334,7 +381,7 @@ export function Scanner({ preset }: { preset?: string }) {
               ) : liveStatus === 'found' && liveResult ? (
                 <Pressable style={styles.liveCard} onPress={openLiveResults}>
                   {liveResult.cover_url ? (
-                    <Image source={{ uri: resolveApiUrl(liveResult.cover_url) }} style={styles.liveCover} />
+                    <Image source={{ uri: resolveApiUrl(liveResult.cover_url) }} style={styles.liveCover} contentFit="contain" />
                   ) : (
                     <View style={styles.liveCoverPlaceholder}>
                       <Text style={styles.liveCoverEmoji}>🎮</Text>
@@ -384,6 +431,8 @@ export function Scanner({ preset }: { preset?: string }) {
             style={[styles.shutterButton, (isCapturing || ocrUnavailable || liveActive) && styles.shutterDisabled]}
             onPress={handleCapture}
             disabled={isCapturing || ocrUnavailable || liveActive}
+            accessibilityRole="button"
+            accessibilityLabel="Capture cover"
           >
             <View style={styles.shutterRing}>
               <View style={[styles.shutterCore, (isCapturing || ocrUnavailable || liveActive) && styles.shutterCoreBusy]} />
@@ -393,6 +442,8 @@ export function Scanner({ preset }: { preset?: string }) {
             <Pressable
               style={[styles.liveToggle, liveActive && styles.liveToggleOn]}
               onPress={() => (liveActive ? stopLive() : setLiveActive(true))}
+              accessibilityRole="button"
+              accessibilityLabel={liveActive ? 'Stop live scan' : 'Start live scan'}
             >
               <Text style={[styles.liveToggleText, liveActive && styles.liveToggleTextOn]}>
                 {liveActive ? 'Live on' : '🔴 Live'}
@@ -412,7 +463,7 @@ export function Scanner({ preset }: { preset?: string }) {
       )}
 
       {activeMethod && (
-        <Pressable style={styles.openModalButton} onPress={() => setShowOptions(true)}>
+        <Pressable style={styles.openModalButton} onPress={() => setShowOptions(true)} accessibilityRole="button" accessibilityLabel="Change scan method">
           <Text style={styles.openModalText}>Switch method</Text>
         </Pressable>
       )}
@@ -547,8 +598,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   targetFrame: {
-    width: 210,
-    height: 280,
     borderRadius: 10,
     borderWidth: 2,
     borderColor: theme.accent.warm,
@@ -558,11 +607,22 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 0 },
   },
+  targetCornerTopLeft: { position: 'absolute', top: -2, left: -2, width: 30, height: 30, borderTopWidth: 4, borderLeftWidth: 4, borderColor: theme.accent.primary, borderTopLeftRadius: 10 },
+  targetCornerTopRight: { position: 'absolute', top: -2, right: -2, width: 30, height: 30, borderTopWidth: 4, borderRightWidth: 4, borderColor: theme.accent.primary, borderTopRightRadius: 10 },
+  targetCornerBottomLeft: { position: 'absolute', bottom: -2, left: -2, width: 30, height: 30, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: theme.accent.primary, borderBottomLeftRadius: 10 },
+  targetCornerBottomRight: { position: 'absolute', bottom: -2, right: -2, width: 30, height: 30, borderBottomWidth: 4, borderRightWidth: 4, borderColor: theme.accent.primary, borderBottomRightRadius: 10 },
   overlayHint: {
     color: theme.text.primary,
     fontSize: 13,
     fontWeight: '600',
     marginTop: 16,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowRadius: 6,
+  },
+  overlayDistance: {
+    color: 'rgba(255,255,255,0.78)',
+    fontSize: 11,
+    marginTop: 6,
     textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowRadius: 6,
   },
@@ -579,7 +639,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     left: 16,
-    bottom: 40,
+    bottom: 88,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -710,12 +770,15 @@ const styles = StyleSheet.create({
   ocrWarningText: { color: theme.accent.warm, fontSize: 12, fontWeight: '600', textAlign: 'center' },
   openModalButton: {
     position: 'absolute',
-    bottom: 12,
+    bottom: 18,
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: 18,
     paddingVertical: 8,
+    minHeight: 40,
     borderRadius: 20,
+    zIndex: 20,
+    elevation: 20,
   },
   openModalText: { color: theme.text.primary, fontSize: 13, fontWeight: '600' },
   cameraText: { color: theme.text.primary, fontSize: 16, fontWeight: '600' },

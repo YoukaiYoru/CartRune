@@ -171,6 +171,9 @@ func (c *Client) get(ctx context.Context, endpoint string, q url.Values, out int
 			lastErr = ErrRateLimited
 			continue
 		}
+		if resp.StatusCode == http.StatusNotFound {
+			return resp.StatusCode, ErrNotFound
+		}
 		if resp.StatusCode != http.StatusOK {
 			snippet := strings.TrimSpace(string(body))
 			if len(snippet) > 200 {

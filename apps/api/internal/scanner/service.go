@@ -140,7 +140,10 @@ func (s *Service) MatchEmbedding(embedding []float64, platformHint string) (*Sca
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	matches, err := s.vectorSvc.Search(ctx, vec, 10, scoreThreshold)
+	// Fetch a wider candidate pool before applying platform hints. Filtering
+	// only the first ten nearest covers can discard the correct release when a
+	// different platform has a slightly higher visual score.
+	matches, err := s.vectorSvc.Search(ctx, vec, 50, scoreThreshold)
 	if err != nil {
 		if errors.Is(err, vector.ErrUnavailable) {
 			return nil, errors.New("vector store unavailable")

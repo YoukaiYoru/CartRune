@@ -166,6 +166,9 @@ func (s *Service) GetGameDetail(id uuid.UUID) (*GameDetailResponse, error) {
 
 	detail := &GameDetailResponse{
 		GameResponse: gameToResponse(game),
+		Platforms:    make([]PlatformResponse, 0),
+		Releases:     make([]ReleaseResponse, 0),
+		Covers:       make([]CoverResponse, 0),
 		AvgRating:    avgRating,
 		ReviewsCount: int(reviewsCount),
 	}
@@ -223,15 +226,16 @@ func gameToResponse(g *models.Game) GameResponse {
 // with credentials is never serialized.
 func coverToResponse(cv *models.Cover) CoverResponse {
 	return CoverResponse{
-		ID:       cv.ID.String(),
-		GameID:   cv.GameID.String(),
-		URL:      media.CoverPath(cv.ID),
-		Region:   cv.Region,
-		Language: cv.Language,
-		Type:     cv.Type,
-		Width:    cv.Width,
-		Height:   cv.Height,
-		Source:   cv.Source,
-		Primary:  cv.Primary,
+		ID:        cv.ID.String(),
+		GameID:    cv.GameID.String(),
+		ReleaseID: cv.ReleaseID.String(),
+		URL:       media.CoverPath(cv.ID),
+		Region:    cv.Region,
+		Language:  cv.Language,
+		Type:      cv.Type,
+		Width:     cv.Width,
+		Height:    cv.Height,
+		Source:    cv.Source,
+		Primary:   cv.Primary,
 	}
 }

@@ -25,16 +25,27 @@ export function useImportScreenScraperGame() {
 // Resolves a game title to its full ScreenScraper media (covers, screenshots,
 // logos, videos) by searching the remote database, picking the first result,
 // then fetching its detail.
-export function useScreenScraperMediaForTitle(title: string | null, enabled = false) {
+export function useScreenScraperMediaForTitle(
+  title: string | null,
+  enabled = false,
+  platformHint?: string
+) {
   return useQuery({
-    queryKey: ['screenscraper', 'media', title],
+    queryKey: ['screenscraper', 'media', title, platformHint],
     queryFn: async () => {
       if (!title) return null;
-      const results = await ssApi.searchScreenScraper({ query: title });
+      const query = [title, platformHint].filter(Boolean).join(' ');
+      const results = await ssApi.searchScreenScraper({ query });
       const best = results.find((r) => r.game_id) || results[0];
       if (!best) return null;
-      const detail = await ssApi.getScreenScraperGame(best.game_id);
-      return detail;
+      try {
+        return await ssApi.getScreenScraperGame(best.game_id);
+      } catch {
+        // A search result may have a stale/limited detail id. The search
+        // candidates remain usable for import, so media enrichment must not
+        // turn the whole scanner result into an error.
+        return null;
+      }
     },
     enabled: enabled && !!title,
     retry: 1,

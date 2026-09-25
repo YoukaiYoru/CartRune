@@ -58,6 +58,7 @@ export interface Release {
 export interface Cover {
   id: string;
   game_id: string;
+  release_id?: string;
   url: string;
   region: string;
   language: string;
@@ -176,6 +177,8 @@ export interface MatchResult {
 export interface ScanResponse {
   matches: MatchResult[];
   method: string;
+  /** How the returned match was obtained, when the scanner used a fallback. */
+  match_source?: 'visual' | 'catalog';
 }
 
 export interface CoverAnalysis {

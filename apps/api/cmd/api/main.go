@@ -86,6 +86,9 @@ func main() {
 	if err := ensureLibraryGameKey(db); err != nil {
 		log.Fatalf("failed to migrate library games key: %v", err)
 	}
+	if err := ensureCoverReleaseKeys(db); err != nil {
+		log.Fatalf("failed to migrate cover release keys: %v", err)
+	}
 
 	// Strip ScreenScraper credentials from covers persisted before the media
 	// proxy existed (they are re-attached server-side at fetch time).
@@ -253,6 +256,24 @@ func ensureLibraryGameKey(db *gorm.DB) error {
 		ALTER TABLE library_games DROP CONSTRAINT IF EXISTS library_games_pkey;
 		ALTER TABLE library_games DROP CONSTRAINT IF EXISTS pk_library_games;
 		ALTER TABLE library_games ADD CONSTRAINT pk_library_games PRIMARY KEY (library_id, game_id);
+	`).Error
+}
+
+// ensureCoverReleaseKeys repairs covers imported before ReleaseID was stored.
+// Existing rows are linked to the official release for their game; new imports
+// persist the exact release selected from ScreenScraper.
+func ensureCoverReleaseKeys(db *gorm.DB) error {
+	return db.Exec(`
+		UPDATE covers AS c
+		SET release_id = (
+			SELECT r.id
+			FROM releases AS r
+			WHERE r.game_id = c.game_id
+			ORDER BY r.official DESC, r.created_at ASC, r.id ASC
+			LIMIT 1
+		)
+		WHERE (c.release_id IS NULL OR c.release_id = '00000000-0000-0000-0000-000000000000')
+		  AND EXISTS (SELECT 1 FROM releases AS r2 WHERE r2.game_id = c.game_id)
 	`).Error
 }
 

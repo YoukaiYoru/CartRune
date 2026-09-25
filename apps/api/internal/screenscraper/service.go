@@ -2,6 +2,7 @@ package screenscraper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/YoukaiYoru/api/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Service provides higher-level operations over the ScreenScraper client and
@@ -60,7 +62,15 @@ func (s *Service) ImportByQuery(ctx context.Context, query, platformHint string)
 			return result.GameID, nil
 		}
 	}
-	items, err := s.Search(ctx, SearchRequest{Query: query})
+	var items []SearchItem
+	var err error
+	systemID := screenScraperSystemID(platformHint)
+	for _, candidate := range searchQueryVariants(query) {
+		items, err = s.Search(ctx, SearchRequest{Query: candidate, SystemeID: systemID})
+		if err == nil && len(items) > 0 {
+			break
+		}
+	}
 	if err != nil || len(items) == 0 {
 		if err == nil {
 			err = ErrNotFound
@@ -76,11 +86,80 @@ func (s *Service) ImportByQuery(ctx context.Context, query, platformHint string)
 			}
 		}
 	}
-	result, err := s.Import(ctx, selected.GameID, selected.Region, "")
+	var result *ImportResponse
+	if selected.source != nil {
+		// jeuRecherche returns the game metadata and media (without ROM blocks),
+		// which is enough for a cover import and avoids a quota-expensive detail
+		// request that can return 404 for a valid game id/system pair.
+		result, err = s.importGameInfo(ctx, selected.source, selected.Region, "")
+	} else {
+		result, err = s.importWithSystem(ctx, selected.GameID, selected.SystemID, selected.Region, "")
+	}
 	if err != nil {
 		return "", err
 	}
 	return result.GameID, nil
+}
+
+// screenScraperSystemID maps the platform names produced by OCR/vision to the
+// numeric identifiers expected by jeuRecherche.php. Unknown platforms remain
+// unfiltered so the provider can still return a useful candidate.
+func screenScraperSystemID(platform string) int {
+	normalized := strings.ToLower(strings.TrimSpace(platform))
+	switch {
+	case strings.Contains(normalized, "nintendo ds") || normalized == "nds":
+		return 15
+	case strings.Contains(normalized, "mega drive") || strings.Contains(normalized, "megadrive") || strings.Contains(normalized, "genesis"):
+		return 1
+	default:
+		return 0
+	}
+}
+
+// searchQueryVariants handles title punctuation that ScreenScraper treats as
+// meaningful. Vision models often omit the separator in titles such as
+// "Final Fantasy - The 4 Heroes Of Light", even though the provider indexes
+// the hyphenated form. Keep the original first, then try conservative
+// punctuation variants without inventing words.
+func searchQueryVariants(query string) []string {
+	query = strings.Join(strings.Fields(query), " ")
+	if query == "" {
+		return nil
+	}
+	variants := []string{query}
+	add := func(value string) {
+		value = strings.Join(strings.Fields(value), " ")
+		if value == "" {
+			return
+		}
+		for _, existing := range variants {
+			if strings.EqualFold(existing, value) {
+				return
+			}
+		}
+		variants = append(variants, value)
+	}
+	add(strings.ReplaceAll(query, ":", " -"))
+	add(strings.ReplaceAll(query, ":", " - "))
+	// Vision models can read the numeral in this title as "IV" and omit the
+	// article/separator used by ScreenScraper. Keep this normalization narrow
+	// and deterministic instead of asking the provider for many fuzzy queries.
+	if strings.Contains(strings.ToLower(query), "final fantasy") && strings.Contains(strings.ToLower(query), "heroes of light") {
+		add("Final Fantasy - The 4 Heroes of Light")
+	}
+	words := strings.Fields(query)
+	for i, word := range words {
+		if strings.EqualFold(word, "iv") {
+			copyWords := append([]string(nil), words...)
+			copyWords[i] = "4"
+			add(strings.Join(copyWords, " "))
+		}
+	}
+	if index := strings.Index(strings.ToLower(query), " the "); index > 0 {
+		add(query[:index] + " -" + query[index:])
+		add(query[:index] + " - " + query[index+1:])
+	}
+	return variants
 }
 
 func NewService(client *Client, db *gorm.DB) *Service {
@@ -124,6 +203,13 @@ func (s *Service) Search(ctx context.Context, req SearchRequest) ([]SearchItem, 
 
 	items := make([]SearchItem, 0, len(results))
 	for _, g := range results {
+		// ScreenScraper can occasionally return an empty object with HTTP 200
+		// while a search is being throttled or the query has no usable result.
+		// Never expose that placeholder as a candidate: it would later become
+		// gameid=0 and produce a misleading jeuInfos.php 404.
+		if g == nil || g.IDInt() <= 0 || strings.TrimSpace(g.Title(req.Region)) == "" || g.Systeme.ID == "" {
+			continue
+		}
 		if ok, _ := g.OfficialContent(); !ok {
 			continue
 		}
@@ -139,6 +225,7 @@ func (s *Service) Search(ctx context.Context, req SearchRequest) ([]SearchItem, 
 			Note:        g.NoteScore(),
 		}
 		item.Official, item.FilteredOut = g.OfficialContent()
+		item.source = g
 		items = append(items, item)
 	}
 	s.mu.Lock()
@@ -218,13 +305,24 @@ func (s *Service) Detail(ctx context.Context, gameID int, region, language strin
 }
 
 // Import fetches a game by id and persists it into the local catalog, applying
-// the official-content filter. When the game already exists it is skipped.
+// the official-content filter. It is idempotent and safe when two scanner
+// requests import the same provider result concurrently.
 func (s *Service) Import(ctx context.Context, gameID int, region, language string) (*ImportResponse, error) {
-	g, err := s.client.GameDetail(ctx, gameID)
+	return s.importWithSystem(ctx, gameID, 0, region, language)
+}
+
+func (s *Service) importWithSystem(ctx context.Context, gameID, systemID int, region, language string) (*ImportResponse, error) {
+	g, err := s.client.GameDetailForSystem(ctx, gameID, systemID)
 	if err != nil {
 		return nil, err
 	}
+	return s.importGameInfo(ctx, g, region, language)
+}
 
+func (s *Service) importGameInfo(ctx context.Context, g *GameInfo, region, language string) (*ImportResponse, error) {
+	if g == nil || g.IDInt() <= 0 || g.Systeme.ID == "" {
+		return nil, ErrNotFound
+	}
 	// Reject non-official content based on the ROM flags.
 	if ok, reason := g.OfficialContent(); !ok {
 		return nil, fmt.Errorf("%w: %s", ErrFiltered, reason)
@@ -233,13 +331,7 @@ func (s *Service) Import(ctx context.Context, gameID int, region, language strin
 	title := g.NormalizedTitle(region)
 	slug := slugify(title)
 
-	// Skip if a game with the same slug already exists.
-	var existing models.Game
-	if err := s.db.Where("slug = ?", slug).First(&existing).Error; err == nil {
-		return &ImportResponse{GameID: existing.ID.String(), Title: existing.Title, Created: false}, nil
-	}
-
-	game := models.Game{
+	gameInput := models.Game{
 		ID:          uuid.New(),
 		Title:       title,
 		Slug:        slug,
@@ -249,49 +341,104 @@ func (s *Service) Import(ctx context.Context, gameID int, region, language strin
 	}
 	if d := g.ReleaseDate(region); d != "" {
 		if t, perr := time.Parse("2006-01-02", d); perr == nil {
-			game.ReleaseDate = &t
+			gameInput.ReleaseDate = &t
 		}
 	}
 
+	createdGame := false
+	var game models.Game
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&game).Error; err != nil {
-			return err
-		}
-
-		// Platform (create or reuse by name). The ID is pre-assigned so a
-		// FirstOrCreate on a missing platform does not insert a zero UUID.
-		platform := models.Platform{
-			ID:   uuid.New(),
-			Name: g.Systeme.Text,
-			Slug: slugify(g.Systeme.Text),
-		}
-		if sysID := atoi(g.Systeme.ID); sysID > 0 {
-			platform.Slug = slugify(fmt.Sprintf("%s-%d", g.Systeme.Text, sysID))
-		}
-		if err := tx.Where("slug = ?", platform.Slug).FirstOrCreate(&platform).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&game).Association("Platforms").Append(&platform); err != nil {
-			return err
-		}
-
-		// Release.
-		release := models.Release{
-			ID:         uuid.New(),
-			GameID:     game.ID,
-			PlatformID: platform.ID,
-			Region:     pickRegion(region),
-			Barcode:    extractBarcode(g),
-			Physical:   true,
-			Official:   true,
-		}
-		if g.ReleaseDate(region) != "" {
-			if t, perr := time.Parse("2006-01-02", g.ReleaseDate(region)); perr == nil {
-				release.ReleaseDate = &t
+		// FirstOrCreate is racy under concurrent scanner requests. The unique
+		// slug plus ON CONFLICT makes this operation safe and idempotent.
+		err := tx.Where("slug = ?", slug).First(&game).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			result := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "slug"}},
+				DoNothing: true,
+			}).Create(&gameInput)
+			if result.Error != nil {
+				return result.Error
 			}
-		}
-		if err := tx.Create(&release).Error; err != nil {
+			if result.RowsAffected == 0 {
+				if err := tx.Where("slug = ?", slug).First(&game).Error; err != nil {
+					return err
+				}
+			} else {
+				game = gameInput
+				createdGame = true
+			}
+		} else if err != nil {
 			return err
+		}
+
+		// Platforms have a unique slug. Use the same conflict-safe pattern so
+		// parallel imports cannot fail on idx_platforms_slug.
+		platformName := g.Systeme.Text
+		platformSlug := slugify(platformName)
+		if sysID := atoi(g.Systeme.ID); sysID > 0 {
+			platformSlug = slugify(fmt.Sprintf("%s-%d", platformName, sysID))
+		}
+		// Query into an empty model. If a generated UUID is already present,
+		// GORM adds it to the WHERE clause and misses an existing slug.
+		var platform models.Platform
+		err = tx.Where("slug = ?", platformSlug).First(&platform).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			platform = models.Platform{
+				ID:   uuid.New(),
+				Name: platformName,
+				Slug: platformSlug,
+			}
+			result := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "slug"}},
+				DoNothing: true,
+			}).Create(&platform)
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected == 0 {
+				if err := tx.Where("slug = ?", platform.Slug).First(&platform).Error; err != nil {
+					return err
+				}
+			}
+		} else if err != nil {
+			return err
+		}
+
+		link := models.GamePlatform{GameID: game.ID, PlatformID: platform.ID}
+		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&link).Error; err != nil {
+			return err
+		}
+
+		// Reuse the release for the same game/platform/region, otherwise add
+		// the missing release to an already-imported game.
+		releaseRegion := pickRegion(region)
+		barcode := extractBarcode(g)
+		var release models.Release
+		releaseQuery := tx.Where("game_id = ? AND platform_id = ? AND region = ?", game.ID, platform.ID, releaseRegion)
+		if barcode != "" {
+			releaseQuery = releaseQuery.Where("barcode = ? OR barcode = ''", barcode)
+		}
+		releaseErr := releaseQuery.First(&release).Error
+		if errors.Is(releaseErr, gorm.ErrRecordNotFound) {
+			release = models.Release{
+				ID:         uuid.New(),
+				GameID:     game.ID,
+				PlatformID: platform.ID,
+				Region:     releaseRegion,
+				Barcode:    barcode,
+				Physical:   true,
+				Official:   true,
+			}
+			if g.ReleaseDate(region) != "" {
+				if t, perr := time.Parse("2006-01-02", g.ReleaseDate(region)); perr == nil {
+					release.ReleaseDate = &t
+				}
+			}
+			if err := tx.Create(&release).Error; err != nil {
+				return err
+			}
+		} else if releaseErr != nil {
+			return releaseErr
 		}
 
 		// Persist every image media (box-2D, box-3D, textures, logos, fanart,
@@ -305,16 +452,23 @@ func (s *Service) Import(ctx context.Context, gameID int, region, language strin
 				continue
 			}
 			cover := models.Cover{
-				ID:      uuid.New(),
-				GameID:  game.ID,
-				URL:     media.SanitizeSSURL(m.URL),
-				Region:  m.Region,
-				Type:    m.Type,
-				Source:  "screenscraper",
-				Primary: primary != nil && m.URL == primary.URL,
+				ID:        uuid.New(),
+				GameID:    game.ID,
+				ReleaseID: release.ID,
+				URL:       media.SanitizeSSURL(m.URL),
+				Region:    m.Region,
+				Type:      m.Type,
+				Source:    "screenscraper",
+				Primary:   primary != nil && m.URL == primary.URL,
 			}
-			if err := tx.Create(&cover).Error; err != nil {
-				return err
+			var existingCover models.Cover
+			coverErr := tx.Where("game_id = ? AND release_id = ? AND url = ?", cover.GameID, cover.ReleaseID, cover.URL).First(&existingCover).Error
+			if errors.Is(coverErr, gorm.ErrRecordNotFound) {
+				if err := tx.Create(&cover).Error; err != nil {
+					return err
+				}
+			} else if coverErr != nil {
+				return coverErr
 			}
 		}
 
@@ -323,7 +477,7 @@ func (s *Service) Import(ctx context.Context, gameID int, region, language strin
 		return nil, err
 	}
 
-	return &ImportResponse{GameID: game.ID.String(), Title: game.Title, Created: true}, nil
+	return &ImportResponse{GameID: game.ID.String(), Title: game.Title, Created: createdGame}, nil
 }
 
 // coverProxyURL returns the media proxy path for the primary cover of g,

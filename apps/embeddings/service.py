@@ -26,7 +26,7 @@ from starlette.concurrency import run_in_threadpool
 
 from mobileclip_engine import MobileClipEngine
 from ocr_engine import OcrEngine
-from qwen_engine import analyze_cover as qwen_analyze_cover
+from qwen_engine import VISION_PROVIDER, analyze_cover as qwen_analyze_cover
 
 app = FastAPI(title="CartRune Embeddings")
 logger = logging.getLogger("cartrune.embeddings")
@@ -47,15 +47,28 @@ def health():
     return {
         "status": "ok",
         "dim": engine.dim,
-        "vllm": "enabled" if os.getenv("VLLM_ENABLED", "1").lower() not in {"0", "false", "no"} else "disabled",
-        "vllm_model": os.getenv("VLLM_MODEL", "Qwen2-VL-7B-Instruct"),
+        "vision_provider": VISION_PROVIDER,
+        "vision_model": os.getenv("OLLAMA_MODEL", "gemma3:4b") if VISION_PROVIDER == "ollama" else os.getenv("VLLM_MODEL", "Qwen/Qwen2-VL-2B-Instruct-AWQ"),
+        "ollama_base_url": os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
         "vllm_base_url": os.getenv("VLLM_BASE_URL", "http://localhost:8000/v1"),
     }
 
 
 @app.post("/analyze-cover")
 async def analyze_cover(image: UploadFile = File(...)):
-    """Extract catalog hints from a cover with Qwen2-VL served by vLLM."""
+    """Extract catalog hints from a cover with the configured vision provider."""
+    # Visual MobileCLIP remains available when the optional vision provider is
+    # disabled in local development. Return a valid empty analysis instead of
+    # turning an optional enrichment step into a scanner failure/noisy 503.
+    if VISION_PROVIDER in {"", "disabled", "none", "off"}:
+        return {
+            "title": "",
+            "console": "",
+            "region": "",
+            "edition": "",
+            "publisher": "",
+            "query": "",
+        }
     if image.content_type and not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="expected an image file")
     try:
@@ -66,10 +79,10 @@ async def analyze_cover(image: UploadFile = File(...)):
         result["query"] = " ".join(filter(None, [result["title"], result["edition"], result["region"]]))
         return result
     except RuntimeError as exc:
-        logger.warning("vLLM unavailable: %s", exc)
+        logger.warning("vision provider unavailable provider=%s: %s", VISION_PROVIDER, exc)
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:  # noqa: BLE001
-        logger.exception("qwen cover analysis failed")
+        logger.exception("vision cover analysis failed provider=%s", VISION_PROVIDER)
         raise HTTPException(status_code=500, detail=f"cover analysis failed: {exc}")
 
 

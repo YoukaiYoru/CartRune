@@ -3,6 +3,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   Pressable,
   ActivityIndicator,
   TextInput,
@@ -11,19 +12,19 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { scanBarcode, scanText, matchEmbedding } from '@/services/scanner';
-import { getEmbedding } from '@/lib/embedding-cache';
+import { embedPhoto } from '@/services/embeddings';
+import { getEmbedding, setEmbedding } from '@/lib/embedding-cache';
+import { getScanCapture } from '@/lib/scan-capture';
 import { Image } from 'expo-image';
-import { MatchCard } from '@/components/match-card';
 import {
   useScreenScraperSearch,
   useImportScreenScraperGame,
-  useScreenScraperMediaForTitle,
 } from '@/hooks/useScreenscraper';
-import { MediaGallery } from '@/components/media-gallery';
 import { ScreenHeader } from '@/components/screen-header';
 import { theme } from '@/theme';
 import { resolveApiUrl } from '@/services/api';
 import type { CoverAnalysis, ScanResponse } from '@/services/types';
+import { useAddGameToLibrary, usePrimaryLibrary } from '@/hooks/useCollections';
 
 const methodLabel: Record<string, string> = {
   barcode: 'Barcode Scan',
@@ -33,56 +34,64 @@ const methodLabel: Record<string, string> = {
 
 export function ScannerResults() {
   const router = useRouter();
-  const [isImportMode, setIsImportMode] = useState(false);
-  const { method, value, photo, failed, error, analysis: analysisParam } = useLocalSearchParams<{
+  const { method, value, photo, capture_key, failed, error, analysis: analysisParam, embedding: embeddingParam } = useLocalSearchParams<{
     method: string;
     value?: string;
     photo?: string;
+    capture_key?: string;
     type?: string;
     failed?: string;
     error?: string;
     analysis?: string;
+    embedding?: string;
   }>();
 
   const analysis = parseAnalysis(analysisParam);
-  const analysisQuery = analysis?.query || [analysis?.title, analysis?.console, analysis?.region].filter(Boolean).join(' ');
+  const photoUri = normalizePhotoUri(photo) || getScanCapture(capture_key);
+  // Keep the catalog query focused on the title. Adding edition/region and
+  // console labels makes ScreenScraper return weaker or malformed candidates.
+  const analysisQuery = analysis?.title || analysis?.query || [analysis?.console, analysis?.region].filter(Boolean).join(' ');
 
-  const embedding = photo ? getEmbedding(photo) : undefined;
+  const cachedEmbedding = photoUri ? getEmbedding(photoUri) ?? parseEmbedding(embeddingParam) : undefined;
+  const recoveredEmbeddingQuery = useQuery({
+    queryKey: ['scanner', 'recover-embedding', photoUri],
+    queryFn: async () => {
+      if (!photoUri) throw new Error('cover photo is missing');
+      const recovered = await embedPhoto(photoUri);
+      setEmbedding(photoUri, recovered);
+      return recovered;
+    },
+    enabled: method === 'embedding' && !!photoUri && !cachedEmbedding,
+    retry: 1,
+  });
+  const embedding = cachedEmbedding ?? recoveredEmbeddingQuery.data;
 
   const scanFn =
     method === 'barcode' && value
       ? () => scanBarcode(value)
     : method === 'text' && value
       ? () => scanText(value)
-      : method === 'embedding' && analysisQuery
-        ? () => scanText(analysisQuery, analysis?.console)
-      : method === 'embedding' && embedding
-          ? () => matchEmbedding(embedding)
-          : null;
+    : method === 'embedding' && embedding
+      ? () => scanEmbeddingWithFallback(embedding, analysis, analysisQuery)
+      : null;
 
   const noopFn: () => Promise<ScanResponse> = async () => ({
     matches: [],
     method: 'none',
   });
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['scanner', method, value ?? photo],
+    queryKey: ['scanner', method, value ?? photoUri],
     queryFn: scanFn ?? noopFn,
     enabled: !!scanFn,
     retry: 1,
   });
 
   const results = data?.matches ?? [];
+  const matchSource = data?.match_source ?? (method === 'embedding' ? 'visual' : 'catalog');
   const methodKey = method ?? 'barcode';
+  const [selectedMatchKey, setSelectedMatchKey] = useState<string | null>(null);
+  const selectedMatch = results.find((item) => matchKey(item) === selectedMatchKey) ?? results[0];
 
-  // Auto-resolve ScreenScraper media for the top detected title so a gallery
-  // (covers, screenshots, logos, videos) shows right after a successful scan.
-  const autoTitle = results[0]?.title || (method === 'text' ? value : undefined) || null;
-  const { data: mediaDetail, isLoading: mediaLoading } = useScreenScraperMediaForTitle(
-    autoTitle,
-    !!data && autoTitle !== null
-  );
-  const autoCatalogQuery =
-    method === 'text' && results.length === 0 && !isLoading && !isError ? value ?? null : null;
 
   const renderState = () => {
     if (isLoading) {
@@ -139,13 +148,13 @@ export function ScannerResults() {
           <Text style={styles.stateIcon}>🔤</Text>
           <Text style={styles.stateTitle}>Extracting text...</Text>
           <Text style={styles.stateText}>
-            Cover {photo ? 'captured. OCR will read the title next.' : 'capture the cover first.'}
+            Cover {photoUri ? 'captured. OCR will read the title next.' : 'capture the cover first.'}
           </Text>
         </View>
       );
     }
 
-    if (results.length === 0 && !isImportMode) {
+    if (results.length === 0) {
       const fallback = (
         <View style={styles.fallbackRow}>
           <Pressable
@@ -159,12 +168,6 @@ export function ScannerResults() {
             onPress={() => router.push({ pathname: '/(tabs)/scanner', params: { preset: 'embedding' } })}
           >
             <Text style={styles.fallbackBtnText}>🧠 Visual</Text>
-          </Pressable>
-          <Pressable
-            style={styles.fallbackBtn}
-            onPress={() => setIsImportMode(true)}
-          >
-            <Text style={styles.fallbackBtnText}>🗄️ Import</Text>
           </Pressable>
         </View>
       );
@@ -185,48 +188,65 @@ export function ScannerResults() {
     <View style={styles.container}>
       <ScreenHeader title={`${methodLabel[methodKey]} Results`} showBack />
 
-      {photo && (
-        <View style={styles.photoWrap}>
-          <Image source={{ uri: photo }} style={styles.photoPreview} />
-        </View>
-      )}
+      <ScrollView
+        style={styles.resultsScroll}
+        contentContainerStyle={styles.resultsContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {photoUri && (
+          <View style={styles.photoWrap}>
+            <Text style={styles.photoLabel}>CAPTURED COVER</Text>
+            <Image source={{ uri: photoUri }} style={styles.photoPreview} contentFit="contain" cachePolicy="memory-disk" transition={120} />
+          </View>
+        )}
 
-      {analysis ? <AnalysisCard analysis={analysis} /> : null}
+        {analysis ? <AnalysisCard analysis={analysis} /> : null}
 
-      {isLoading || isError || (method === 'text' && !value) || (method === 'embedding' && !embedding) || failed === '1' ? (
-        <View style={styles.bodyWrap}>{renderState()}</View>
-      ) : results.length > 0 ? (
-        <>
-          <Text style={styles.resultCount}>
-            {results.length} {results.length === 1 ? 'match' : 'matches'} in your shelf
-          </Text>
-          <FlatList
-            data={results}
-            keyExtractor={(item) => item.game_id}
-            contentContainerStyle={styles.list}
-            renderItem={({ item }) => <MatchCard item={item} />}
-          />
-          {mediaDetail ? <MediaGallery detail={mediaDetail} isLoading={mediaLoading} /> : null}
-        </>
-      ) : autoCatalogQuery ? (
-        <ImportPanel
-          initialQuery={autoCatalogQuery}
-          onImported={() => {
-            refetch();
-          }}
-        />
-      ) : isImportMode ? (
-        <ImportPanel
-          onImported={() => {
-            setIsImportMode(false);
-            refetch();
-          }}
-        />
-      ) : (
-        <View style={styles.bodyWrap}>{renderState()}</View>
-      )}
+        {isLoading || isError || recoveredEmbeddingQuery.isLoading || (method === 'text' && !value) || (method === 'embedding' && !embedding) || failed === '1' ? (
+          <View style={styles.bodyWrap}>{renderState()}</View>
+        ) : results.length > 0 ? (
+          <>
+            {selectedMatch ? <CoverMatchHero item={selectedMatch} source={matchSource} /> : null}
+            {results.length > 1 ? (
+              <View style={styles.alternativesSection}>
+                <Text style={styles.sectionLabel}>OTHER MATCHES</Text>
+                {results.map((item) => (
+                  <MatchOption
+                    key={matchKey(item)}
+                    item={item}
+                    source={matchSource}
+                    selected={matchKey(item) === matchKey(selectedMatch)}
+                    onPress={() => setSelectedMatchKey(matchKey(item))}
+                  />
+                ))}
+              </View>
+            ) : null}
+            {selectedMatch ? <ShelfAction item={selectedMatch} /> : null}
+          </>
+        ) : (
+          <View style={styles.bodyWrap}>{renderState()}</View>
+        )}
+      </ScrollView>
     </View>
   );
+}
+
+async function scanEmbeddingWithFallback(
+  embedding: number[],
+  analysis: CoverAnalysis | null,
+  analysisQuery?: string
+): Promise<ScanResponse> {
+  try {
+    // Visual similarity remains the primary signal. Qwen metadata is used to
+    // narrow/fallback the catalog search, never to replace the image match.
+    const visual = await matchEmbedding(embedding, analysis?.console);
+    if (visual.matches.length > 0 || !analysisQuery) return visual;
+    const text = await scanText(analysisQuery, analysis?.console);
+    return text.matches.length > 0 ? { ...text, match_source: 'catalog' } : { ...visual, match_source: 'visual' };
+  } catch (error) {
+    if (!analysisQuery) throw error;
+    return { ...(await scanText(analysisQuery, analysis?.console)), match_source: 'catalog' };
+  }
 }
 
 function parseAnalysis(value?: string | string[]): CoverAnalysis | null {
@@ -241,6 +261,141 @@ function parseAnalysis(value?: string | string[]): CoverAnalysis | null {
   } catch { return null; }
 }
 
+function parseEmbedding(value?: string | string[]): number[] | undefined {
+  if (!value || Array.isArray(value)) return undefined;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) && parsed.every((item) => typeof item === 'number')
+      ? parsed
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function normalizePhotoUri(value?: string): string | undefined {
+  if (!value) return undefined;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function matchKey(item?: { game_id: string; release_id?: string } | null): string {
+  return item ? `${item.game_id}:${item.release_id ?? ''}` : '';
+}
+
+function CoverMatchHero({ item, source }: { item: NonNullable<ScanResponse['matches']>[number]; source: 'visual' | 'catalog' }) {
+  return (
+    <View style={styles.matchHero}>
+      <Text style={styles.matchHeroEyebrow}>{source === 'visual' ? 'COVER MATCH RESULT' : 'CATALOG MATCH RESULT'}</Text>
+      <View style={styles.matchHeroImageFrame}>
+        {item.cover_url ? (
+          <Image
+            source={{ uri: resolveApiUrl(item.cover_url) }}
+            style={styles.matchHeroImage}
+            contentFit="contain"
+            transition={180}
+          />
+        ) : (
+          <Text style={styles.matchHeroPlaceholder}>🎮</Text>
+        )}
+      </View>
+      <Text style={styles.matchHeroTitle} numberOfLines={2}>{item.title}</Text>
+      <Text style={styles.matchHeroMeta}>
+        {[item.platform, item.region].filter(Boolean).join(' · ') || 'Platform not identified'}
+      </Text>
+      <View style={styles.matchScoreBadge}>
+        <Text style={styles.matchScoreText}>
+          {source === 'visual' ? `${Math.round(item.similarity * 100)}% visual match` : 'Matched by title and platform'}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function MatchOption({
+  item,
+  source,
+  selected,
+  onPress,
+}: {
+  item: NonNullable<ScanResponse['matches']>[number];
+  source: 'visual' | 'catalog';
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={[styles.matchOption, selected && styles.matchOptionSelected]} onPress={onPress}>
+      {item.cover_url ? (
+        <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.matchOptionImage} contentFit="contain" />
+      ) : (
+        <View style={styles.matchOptionPlaceholder}><Text>🎮</Text></View>
+      )}
+      <View style={styles.matchOptionInfo}>
+        <Text style={styles.matchOptionTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.matchOptionMeta} numberOfLines={1}>
+          {[item.platform, item.region].filter(Boolean).join(' · ') || 'Unknown release'}
+        </Text>
+      </View>
+      <Text style={styles.matchOptionScore}>{source === 'visual' ? `${Math.round(item.similarity * 100)}%` : 'Catalog'}</Text>
+    </Pressable>
+  );
+}
+
+function ShelfAction({ item }: { item: NonNullable<ScanResponse['matches']>[number] }) {
+  const statuses = [
+    ['backlog', 'Backlog'],
+    ['playing', 'Playing'],
+    ['completed', 'Completed'],
+    ['paused', 'Paused'],
+    ['dropped', 'Dropped'],
+  ] as const;
+  const { library } = usePrimaryLibrary();
+  const addGame = useAddGameToLibrary(library?.id ?? '');
+  const [open, setOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const alreadyAdded = !!library?.games?.some((game) => game.game_id === item.game_id);
+
+  const addWithStatus = (status: (typeof statuses)[number][0]) => {
+    if (!library?.id || saved || alreadyAdded) return;
+    setOpen(false);
+    addGame.mutate(
+      { game_id: item.game_id, release_id: item.release_id, status },
+      { onSuccess: () => setSaved(true) }
+    );
+  };
+
+  if (!library?.id) return null;
+
+  return (
+    <View style={styles.shelfAction}>
+      {open ? (
+        <View style={styles.shelfMenu}>
+          {statuses.map(([value, label]) => (
+            <Pressable key={value} style={styles.shelfMenuItem} onPress={() => addWithStatus(value)} accessibilityRole="button" accessibilityLabel={`Add to ${label}`}>
+              <Text style={styles.shelfMenuText}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      <Pressable
+        style={[styles.shelfButton, (alreadyAdded || saved) && styles.shelfButtonSaved]}
+        onPress={() => setOpen((value) => !value)}
+        disabled={addGame.isPending || alreadyAdded || saved}
+        accessibilityRole="button"
+        accessibilityLabel={alreadyAdded || saved ? 'Game already in your shelf' : 'Choose shelf status'}
+      >
+        {addGame.isPending ? <ActivityIndicator size="small" color={theme.bg.deep} /> : (
+          <Text style={styles.shelfButtonText}>{alreadyAdded || saved ? '✓ In your shelf' : 'Add to shelf ▾'}</Text>
+        )}
+      </Pressable>
+      {addGame.isError ? <Text style={styles.shelfError}>Could not save. Choose a status to try again.</Text> : null}
+    </View>
+  );
+}
+
 function AnalysisCard({ analysis }: { analysis: CoverAnalysis }) {
   const fields = [
     ['GAME', analysis.title], ['CONSOLE', analysis.console], ['REGION', analysis.region],
@@ -248,17 +403,41 @@ function AnalysisCard({ analysis }: { analysis: CoverAnalysis }) {
   ].filter(([, value]) => value);
   return (
     <View style={styles.analysisCard}>
-      <View style={styles.analysisHeader}><View style={styles.aiBadge}><Text style={styles.aiBadgeText}>AI</Text></View><View><Text style={styles.analysisTitle}>Cover notes</Text><Text style={styles.analysisSubtitle}>Qwen found these hints</Text></View></View>
+      <View style={styles.analysisHeader}><View style={styles.aiBadge}><Text style={styles.aiBadgeText}>AI</Text></View><View><Text style={styles.analysisTitle}>Cover notes</Text><Text style={styles.analysisSubtitle}>Vision model found these hints</Text></View></View>
       <View style={styles.analysisGrid}>{fields.map(([label, value]) => <View key={label} style={styles.analysisField}><Text style={styles.analysisLabel}>{label}</Text><Text style={styles.analysisValue} numberOfLines={1}>{value}</Text></View>)}</View>
     </View>
   );
 }
 
 function ImportPanel({ onImported, initialQuery }: { onImported: () => void; initialQuery?: string }) {
+  const shelfStatuses = [
+    ['backlog', 'Backlog'],
+    ['playing', 'Playing'],
+    ['completed', 'Completed'],
+    ['paused', 'Paused'],
+    ['dropped', 'Dropped'],
+  ] as const;
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState<string | null>(initialQuery ?? null);
+  const [status, setStatus] = useState<(typeof shelfStatuses)[number][0]>('backlog');
   const { data, isLoading, isError } = useScreenScraperSearch(submitted, submitted !== null);
   const importGame = useImportScreenScraperGame();
+  const { library } = usePrimaryLibrary();
+  const addGame = useAddGameToLibrary(library?.id || '');
+  const [savedGameIds, setSavedGameIds] = useState<string[]>([]);
+
+  const importAndSave = async (item: { game_id: string }) => {
+    const imported = await importGame.mutateAsync(item.game_id);
+    if (library?.id && imported.game_id) {
+      await addGame.mutateAsync({ game_id: imported.game_id, status });
+      setSavedGameIds((current) => [...current, item.game_id]);
+    }
+    setSubmitted(null);
+    setQuery('');
+    onImported();
+  };
+
+  const isSaving = importGame.isPending || addGame.isPending;
 
   return (
     <>
@@ -285,6 +464,20 @@ function ImportPanel({ onImported, initialQuery }: { onImported: () => void; ini
             <Text style={styles.searchBtnText}>Search</Text>
           </Pressable>
         </View>
+        <Text style={styles.statusLabel}>Save as</Text>
+        <View style={styles.statusRow}>
+          {shelfStatuses.map(([value, label]) => (
+            <Pressable
+              key={value}
+              style={[styles.statusChip, status === value && styles.statusChipActive]}
+              onPress={() => setStatus(value)}
+            >
+              <Text style={[styles.statusChipText, status === value && styles.statusChipTextActive]}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       {isLoading ? (
@@ -304,18 +497,11 @@ function ImportPanel({ onImported, initialQuery }: { onImported: () => void; ini
           keyExtractor={(item) => item.game_id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <Pressable
+            <View
               style={styles.matchCard}
-              onPress={() => {
-                importGame.mutateAsync(item.game_id).then(() => {
-                  setSubmitted(null);
-                  setQuery('');
-                  onImported();
-                });
-              }}
             >
               {item.cover_url ? (
-                <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.coverImage} />
+                <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.coverImage} contentFit="contain" />
               ) : (
                 <View style={styles.coverPlaceholder}>
                   <Text style={styles.coverText}>🎮</Text>
@@ -328,18 +514,29 @@ function ImportPanel({ onImported, initialQuery }: { onImported: () => void; ini
                 {item.system ? <Text style={styles.matchPlatform}>{item.system}</Text> : null}
                 {item.region ? <Text style={styles.matchRegion}>{item.region}</Text> : null}
               </View>
-              <View style={styles.importAction}>
+              <Pressable
+                style={styles.importAction}
+                onPress={() => importAndSave(item)}
+                disabled={isSaving || savedGameIds.includes(item.game_id)}
+                accessibilityRole="button"
+              >
                 {importGame.isPending ? (
                   <ActivityIndicator size="small" color={theme.accent.warm} />
                 ) : (
                   <>
                     <Text style={styles.importActionText}>
-                      {importGame.variables === item.game_id ? 'Importing...' : 'Import'}
+                      {savedGameIds.includes(item.game_id)
+                        ? '✓ In shelf'
+                        : isSaving
+                          ? 'Saving...'
+                          : library?.id
+                            ? 'Import & shelf'
+                            : 'Import'}
                     </Text>
                   </>
                 )}
-              </View>
-            </Pressable>
+              </Pressable>
+            </View>
           )}
         />
       ) : (
@@ -358,9 +555,40 @@ function ImportPanel({ onImported, initialQuery }: { onImported: () => void; ini
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg.deep },
   bodyWrap: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
-  photoWrap: { alignItems: 'center', paddingTop: 12 },
-  photoPreview: { width: 96, height: 126, borderRadius: 8, backgroundColor: theme.bg.card },
-  resultCount: { color: theme.text.muted, fontSize: 13, paddingHorizontal: 16, marginBottom: 10 },
+  photoWrap: { alignItems: 'center', paddingTop: 12, paddingBottom: 4 },
+  resultsScroll: { flex: 1 },
+  resultsContent: { paddingBottom: 30 },
+  photoLabel: { color: theme.text.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1, marginBottom: 6 },
+  photoPreview: { width: 150, height: 190, borderRadius: 14, backgroundColor: theme.bg.card, borderWidth: 1, borderColor: theme.border.subtle },
+  matchHero: { marginHorizontal: 16, marginTop: 12, marginBottom: 16, padding: 16, borderRadius: 22, backgroundColor: theme.bg.card, borderWidth: 1, borderColor: theme.accent.primary, alignItems: 'center' },
+  matchHeroEyebrow: { alignSelf: 'flex-start', color: theme.accent.muted, fontSize: 9, fontWeight: '900', letterSpacing: 1.2, marginBottom: 10 },
+  matchHeroImageFrame: { width: 190, height: 240, borderRadius: 16, backgroundColor: theme.bg.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderWidth: 1, borderColor: theme.border.subtle },
+  matchHeroImage: { width: '100%', height: '100%' },
+  matchHeroPlaceholder: { fontSize: 48, opacity: 0.4 },
+  matchHeroTitle: { color: theme.text.primary, fontSize: 21, lineHeight: 25, fontWeight: '800', textAlign: 'center', marginTop: 12 },
+  matchHeroMeta: { color: theme.text.muted, fontSize: 12, marginTop: 4 },
+  matchScoreBadge: { marginTop: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: theme.bg.surface },
+  matchScoreText: { color: theme.accent.warm, fontSize: 11, fontWeight: '800' },
+  alternativesSection: { paddingHorizontal: 16, marginBottom: 12 },
+  sectionLabel: { color: theme.text.muted, fontSize: 9, fontWeight: '900', letterSpacing: 1.2, marginBottom: 8 },
+  matchOption: { minHeight: 66, flexDirection: 'row', alignItems: 'center', padding: 8, marginBottom: 7, borderRadius: 14, backgroundColor: theme.bg.card, borderWidth: 1, borderColor: theme.border.subtle },
+  matchOptionSelected: { borderColor: theme.accent.primary, backgroundColor: theme.bg.elevated },
+  matchOptionImage: { width: 42, height: 54, borderRadius: 7, backgroundColor: theme.bg.surface },
+  matchOptionPlaceholder: { width: 42, height: 54, borderRadius: 7, backgroundColor: theme.bg.surface, alignItems: 'center', justifyContent: 'center' },
+  matchOptionInfo: { flex: 1, marginHorizontal: 10 },
+  matchOptionTitle: { color: theme.text.primary, fontSize: 13, fontWeight: '700' },
+  matchOptionMeta: { color: theme.text.muted, fontSize: 11, marginTop: 3 },
+  matchOptionScore: { color: theme.accent.warm, fontSize: 13, fontWeight: '800' },
+  shelfAction: { marginHorizontal: 16, marginTop: 4, marginBottom: 22 },
+  shelfMenu: { marginBottom: 8, padding: 6, borderRadius: 14, backgroundColor: theme.bg.card, borderWidth: 1, borderColor: theme.border.subtle, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  shelfMenuItem: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 999, backgroundColor: theme.bg.surface },
+  shelfMenuText: { color: theme.text.secondary, fontSize: 12, fontWeight: '700' },
+  shelfButton: { minHeight: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.accent.warm },
+  shelfButtonSaved: { backgroundColor: theme.accent.primary },
+  shelfButtonText: { color: theme.bg.deep, fontSize: 14, fontWeight: '900' },
+  shelfError: { color: theme.accent.warm, fontSize: 12, textAlign: 'center', marginTop: 8 },
+  extendedSearchButton: { marginHorizontal: 16, marginBottom: 14, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.accent.primary, alignItems: 'center' },
+  extendedSearchText: { color: theme.accent.primary, fontSize: 13, fontWeight: '800' },
   analysisCard: { marginHorizontal: 16, marginTop: 12, marginBottom: 14, padding: 14, borderRadius: 18, backgroundColor: theme.bg.card, borderWidth: 1, borderColor: theme.accent.primary },
   analysisHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   aiBadge: { width: 34, height: 34, borderRadius: 11, backgroundColor: theme.accent.primary, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
@@ -417,6 +645,12 @@ const styles = StyleSheet.create({
   },
   searchBtnDisabled: { opacity: 0.5 },
   searchBtnText: { color: theme.bg.deep, fontWeight: '700', fontSize: 14 },
+  statusLabel: { color: theme.text.muted, fontSize: 10, fontWeight: '800', letterSpacing: 1, marginTop: 14, marginBottom: 7 },
+  statusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  statusChip: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 999, backgroundColor: theme.bg.surface, borderWidth: 1, borderColor: theme.border.subtle },
+  statusChipActive: { backgroundColor: theme.accent.primary, borderColor: theme.accent.primary },
+  statusChipText: { color: theme.text.muted, fontSize: 11, fontWeight: '700' },
+  statusChipTextActive: { color: theme.bg.deep },
   matchCard: {
     flexDirection: 'row',
     alignItems: 'center',

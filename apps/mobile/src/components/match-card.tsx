@@ -16,18 +16,26 @@ export function MatchCard({ item, defaultStatus = 'backlog' }: Props) {
   const router = useRouter();
   const { library, isLoading } = usePrimaryLibrary();
   const [added, setAdded] = useState(false);
+  const [status, setStatus] = useState(defaultStatus);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const shelfStatuses = [
+    ['backlog', 'Backlog'],
+    ['playing', 'Playing'],
+    ['completed', 'Completed'],
+    ['paused', 'Paused'],
+    ['dropped', 'Dropped'],
+  ] as const;
 
   const alreadyOwned = library?.games?.some((g) => g.game_id === item.game_id) || false;
 
   const addGame = useAddGameToLibrary(library?.id || '');
   const disabled = addGame.isPending || added || alreadyOwned || !library?.id || isLoading;
 
-  const handleAdd = () => {
+  const handleAdd = (nextStatus = status) => {
     if (!library?.id || added || alreadyOwned) return;
-    addGame.mutate(
-      { game_id: item.game_id, release_id: item.release_id, status: defaultStatus },
-      { onSuccess: () => setAdded(true) }
-    );
+    setStatus(nextStatus);
+    setShowStatusMenu(false);
+    addGame.mutate({ game_id: item.game_id, release_id: item.release_id, status: nextStatus }, { onSuccess: () => setAdded(true) });
   };
 
   return (
@@ -37,7 +45,7 @@ export function MatchCard({ item, defaultStatus = 'backlog' }: Props) {
         onPress={() => router.push(`/game/${item.game_id}`)}
       >
         {item.cover_url ? (
-          <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.cover} />
+          <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.cover} contentFit="contain" />
         ) : (
           <View style={styles.coverPlaceholder}>
             <Text style={styles.coverText}>🎮</Text>
@@ -59,19 +67,36 @@ export function MatchCard({ item, defaultStatus = 'backlog' }: Props) {
       </Pressable>
 
       {library ? (
-        <Pressable
-          style={[styles.addButton, (disabled && styles.addButtonDone)]}
-          onPress={handleAdd}
-          disabled={disabled}
-        >
-          {addGame.isPending ? (
-            <ActivityIndicator size="small" color={theme.bg.deep} />
-          ) : added || alreadyOwned ? (
-            <Text style={styles.addButtonText}>✓ In shelf</Text>
-          ) : (
-            <Text style={styles.addButtonText}>Add to shelf</Text>
-          )}
-        </Pressable>
+        <>
+          <Pressable
+            style={[styles.addButton, (disabled && styles.addButtonDone)]}
+            onPress={() => setShowStatusMenu((visible) => !visible)}
+            disabled={disabled}
+          >
+            {addGame.isPending ? (
+              <ActivityIndicator size="small" color={theme.bg.deep} />
+            ) : added || alreadyOwned ? (
+              <Text style={styles.addButtonText}>✓ In shelf</Text>
+            ) : (
+              <Text style={styles.addButtonText}>Add to shelf ▾</Text>
+            )}
+          </Pressable>
+          {showStatusMenu ? (
+            <View style={styles.statusMenu}>
+              {shelfStatuses.map(([value, label]) => (
+                <Pressable
+                  key={value}
+                  style={[styles.statusOption, status === value && styles.statusOptionActive]}
+                  onPress={() => handleAdd(value)}
+                >
+                  <Text style={[styles.statusOptionText, status === value && styles.statusOptionTextActive]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+        </>
       ) : null}
     </View>
   );
@@ -113,4 +138,9 @@ const styles = StyleSheet.create({
   },
   addButtonDone: { backgroundColor: theme.bg.surface },
   addButtonText: { color: theme.text.primary, fontSize: 13, fontWeight: '700' },
+  statusMenu: { marginTop: 6, padding: 5, borderRadius: 12, backgroundColor: theme.bg.surface, borderWidth: 1, borderColor: theme.border.subtle, flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
+  statusOption: { paddingHorizontal: 9, paddingVertical: 7, borderRadius: 999 },
+  statusOptionActive: { backgroundColor: theme.accent.primary },
+  statusOptionText: { color: theme.text.muted, fontSize: 11, fontWeight: '700' },
+  statusOptionTextActive: { color: theme.bg.deep },
 });

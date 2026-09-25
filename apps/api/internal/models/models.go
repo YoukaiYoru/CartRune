@@ -86,6 +86,7 @@ type Cover struct {
 	Height    int       `json:"height"`
 	Source    string    `gorm:"size:50" json:"source"`
 	Primary   bool      `gorm:"default:false" json:"primary"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type Library struct {

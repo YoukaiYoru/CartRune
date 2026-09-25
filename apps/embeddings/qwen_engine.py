@@ -1,8 +1,7 @@
-"""Qwen2-VL cover analysis through a vLLM OpenAI-compatible server.
+"""Vision-model cover analysis through Ollama or a vLLM-compatible server.
 
-The image is sent as a data URL to vLLM and is never written to disk by this
-service. vLLM owns model loading and GPU inference; this service only adapts
-the response to CartRune's scanner contract.
+The image is kept in memory and sent to the configured provider. This module
+only adapts the provider response to CartRune's scanner contract.
 """
 
 import base64
@@ -20,8 +19,11 @@ logger = logging.getLogger("cartrune.qwen")
 
 load_dotenv()
 
+VISION_PROVIDER = os.getenv("VISION_PROVIDER", "ollama").strip().lower()
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma3:4b")
 VLLM_BASE_URL = os.getenv("VLLM_BASE_URL", "http://localhost:8000/v1").rstrip("/")
-VLLM_MODEL = os.getenv("VLLM_MODEL", "Qwen2-VL-7B-Instruct")
+VLLM_MODEL = os.getenv("VLLM_MODEL", "Qwen/Qwen2-VL-2B-Instruct-AWQ")
 VLLM_API_KEY = os.getenv("VLLM_API_KEY", "").strip()
 VLLM_TIMEOUT = float(os.getenv("VLLM_TIMEOUT", "120"))
 VLLM_ENABLED = os.getenv("VLLM_ENABLED", "1").lower() not in {"0", "false", "no"}
@@ -49,10 +51,39 @@ def _image_data_url(image: Image.Image) -> str:
     return f"data:image/jpeg;base64,{encoded}"
 
 
-def analyze_cover(image: Image.Image) -> dict[str, Any]:
-    if not VLLM_ENABLED:
-        raise RuntimeError("vLLM cover analysis is disabled")
+def _prompt() -> str:
+    return (
+        "Analyze this physical video game cover. Extract only visible or strongly "
+        "supported information. Return JSON only with exactly these string fields: "
+        "title, console, region, edition, publisher. Use an empty string when unknown. "
+        "Do not guess a title from generic artwork. Keep the original spelling when readable."
+    )
 
+
+def _analyze_ollama(image: Image.Image) -> dict[str, Any]:
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": [{
+            "role": "user",
+            "content": _prompt(),
+            "images": [_image_data_url(image).split(",", 1)[1]],
+        }],
+        "stream": False,
+        "format": "json",
+        "options": {"temperature": 0, "num_predict": VLLM_MAX_TOKENS},
+    }
+    response = requests.post(
+        f"{OLLAMA_BASE_URL}/api/chat",
+        headers={"Content-Type": "application/json"},
+        json=payload,
+        timeout=VLLM_TIMEOUT,
+    )
+    response.raise_for_status()
+    body = response.json()
+    return _parse_json(str(body["message"]["content"]))
+
+
+def _analyze_vllm(image: Image.Image) -> dict[str, Any]:
     prompt = (
         "Analyze this physical video game cover. Extract only visible or strongly "
         "supported information. Return JSON only with exactly these string fields: "
@@ -73,26 +104,30 @@ def analyze_cover(image: Image.Image) -> dict[str, Any]:
         "temperature": 0,
         "max_tokens": VLLM_MAX_TOKENS,
     }
+    response = requests.post(
+        f"{VLLM_BASE_URL}/chat/completions",
+        headers={"Content-Type": "application/json"},
+        json=payload,
+        timeout=VLLM_TIMEOUT,
+    )
+    response.raise_for_status()
+    body = response.json()
+    text = body["choices"][0]["message"]["content"]
+    if isinstance(text, list):
+        text = "".join(part.get("text", "") for part in text if isinstance(part, dict))
+    return _parse_json(str(text))
+
+
+def analyze_cover(image: Image.Image) -> dict[str, Any]:
+    if VISION_PROVIDER in {"", "disabled", "none", "off"}:
+        raise RuntimeError("vision cover analysis is disabled")
     try:
-        headers = {"Content-Type": "application/json"}
-        if VLLM_API_KEY:
-            headers["Authorization"] = f"Bearer {VLLM_API_KEY}"
-        response = requests.post(
-            f"{VLLM_BASE_URL}/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=VLLM_TIMEOUT,
-        )
-        response.raise_for_status()
-        body = response.json()
-        text = body["choices"][0]["message"]["content"]
-        if isinstance(text, list):
-            text = "".join(part.get("text", "") for part in text if isinstance(part, dict))
-        raw = _parse_json(str(text))
+        raw = _analyze_ollama(image) if VISION_PROVIDER == "ollama" else _analyze_vllm(image)
     except requests.RequestException as exc:
-        raise RuntimeError(f"vLLM request failed: {exc}") from exc
+        provider = "Ollama" if VISION_PROVIDER == "ollama" else "vLLM"
+        raise RuntimeError(f"{provider} request failed: {exc}") from exc
     except (KeyError, IndexError, TypeError, ValueError) as exc:
-        raise RuntimeError(f"invalid vLLM response: {exc}") from exc
+        raise RuntimeError(f"invalid {VISION_PROVIDER} response: {exc}") from exc
 
     fields = ("title", "console", "region", "edition", "publisher")
     return {field: str(raw.get(field) or "").strip() for field in fields}

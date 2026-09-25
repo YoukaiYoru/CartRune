@@ -68,7 +68,7 @@ function ShelfGameCard({
             <Image
               source={{ uri: resolveApiUrl(item.cover_url) }}
               style={styles.coverImage}
-              contentFit="cover"
+              contentFit="contain"
               transition={150}
             />
           ) : (

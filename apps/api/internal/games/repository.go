@@ -145,7 +145,7 @@ func (r *Repository) GetPrimaryCovers(gameIDs []uuid.UUID) (map[uuid.UUID]models
 		var fallback []models.Cover
 		err = r.db.
 			Where("game_id IN ?", remainder).
-			Order("created_at ASC").
+			Order("id ASC").
 			Find(&fallback).Error
 		if err != nil {
 			return nil, err

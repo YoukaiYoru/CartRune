@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth';
 import { theme } from '@/theme';
+import { ImmersiveBackdrop } from '@/components/immersive-backdrop';
 
 export function Login() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export function Login() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <ImmersiveBackdrop />
       <View style={styles.brand}>
         <Text style={styles.logo}>📚</Text>
         <Text style={styles.title}>CartRune</Text>
@@ -106,7 +108,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     justifyContent: 'center',
   },
-  brand: { alignItems: 'center', marginBottom: 40 },
+  brand: { alignItems: 'center', marginBottom: 40, zIndex: 1 },
   logo: { fontSize: 48, marginBottom: 8 },
   title: { color: theme.text.primary, fontSize: 32, fontWeight: '800', letterSpacing: 1 },
   subtitle: { color: theme.text.muted, fontSize: 14, marginTop: 6 },
@@ -116,7 +118,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.bg.input,
     borderWidth: 1,
     borderColor: theme.border.subtle,
-    borderRadius: 10,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 12,
     color: theme.text.primary,
@@ -126,14 +128,14 @@ const styles = StyleSheet.create({
   error: { color: '#e0706a', fontSize: 13, marginBottom: 12 },
   button: {
     backgroundColor: theme.accent.primary,
-    borderRadius: 10,
+    borderRadius: theme.radius.sm,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: theme.bg.deep, fontSize: 15, fontWeight: '800', letterSpacing: 1 },
-  linkWrap: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
+  linkWrap: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, zIndex: 1 },
   linkMuted: { color: theme.text.muted, fontSize: 14 },
   linkAccent: { color: theme.accent.warm, fontSize: 14, fontWeight: '600' },
 });
