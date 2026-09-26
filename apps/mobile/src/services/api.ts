@@ -3,8 +3,11 @@ import axios from 'axios';
 import { tokenStorage } from '@/services/auth';
 
 const FALLBACK_HOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
-const HOST = process.env.EXPO_PUBLIC_API_HOST || FALLBACK_HOST;
-export const API_BASE = `http://${HOST}:8080/api/v1`;
+const API_HOST = process.env.EXPO_PUBLIC_API_HOST || FALLBACK_HOST;
+const API_ROOT = /^https?:\/\//i.test(API_HOST)
+  ? API_HOST.replace(/\/+$/, '')
+  : `http://${API_HOST}:8080`;
+export const API_BASE = `${API_ROOT}/api/v1`;
 
 /** Resolve API-relative media paths before native image/video components use them. */
 export function resolveApiUrl(value?: string | null): string | undefined {
