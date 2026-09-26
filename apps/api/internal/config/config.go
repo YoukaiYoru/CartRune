@@ -43,6 +43,7 @@ type Config struct {
 	QdrantHost   string
 	QdrantPort   int
 	QdrantAPIKey string
+	QdrantUseTLS bool
 }
 
 func Load() *Config {
@@ -78,6 +79,7 @@ func Load() *Config {
 		QdrantHost:   getEnv("QDRANT_HOST", "localhost"),
 		QdrantPort:   getEnvInt("QDRANT_PORT", 6334),
 		QdrantAPIKey: getEnv("QDRANT_API_KEY", ""),
+		QdrantUseTLS: getEnvBool("QDRANT_USE_TLS", false),
 	}
 }
 
@@ -93,6 +95,15 @@ func getEnvInt(key string, def int) int {
 	if v := os.Getenv(key); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			return n
+		}
+	}
+	return def
+}
+
+func getEnvBool(key string, def bool) bool {
+	if v := os.Getenv(key); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			return b
 		}
 	}
 	return def

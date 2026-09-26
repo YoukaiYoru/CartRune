@@ -82,7 +82,10 @@ def main():
     engine = MobileClipEngine()
     print(f"[worker] modelo listo ({engine.ckpt})")
 
-    qdrant = QdrantClient(url=os.getenv("QDRANT_URL", "http://localhost:6333"))
+    qdrant = QdrantClient(
+        url=os.getenv("QDRANT_URL", "http://localhost:6333"),
+        api_key=os.getenv("QDRANT_API_KEY") or None,
+    )
     if not qdrant.collection_exists(COLLECTION):
         qdrant.create_collection(
             collection_name=COLLECTION,

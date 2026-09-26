@@ -152,6 +152,7 @@ func main() {
 		Host:    cfg.QdrantHost,
 		Port:    cfg.QdrantPort,
 		APIKey:  cfg.QdrantAPIKey,
+		UseTLS:  cfg.QdrantUseTLS,
 		Metrics: metrics,
 	})
 	if !vectorSvc.Healthy(context.Background()) {

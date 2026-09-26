@@ -52,6 +52,7 @@ type Options struct {
 	Host    string
 	Port    int
 	APIKey  string
+	UseTLS  bool
 	Dims    int
 	Metrics *observability.Recorder
 }
@@ -69,6 +70,7 @@ func NewService(opt Options) *Service {
 		Host:   opt.Host,
 		Port:   opt.Port,
 		APIKey: opt.APIKey,
+		UseTLS: opt.UseTLS,
 	})
 	if err != nil {
 		// Client construction only prepares the pool; surface a descriptive

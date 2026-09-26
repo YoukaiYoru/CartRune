@@ -88,6 +88,8 @@ services:
       EMBEDDINGS_URL: http://embeddings:8700
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6334
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      QDRANT_USE_TLS: ${QDRANT_USE_TLS:-false}
       SS_DEVID: ${SS_DEVID:-}
       SS_DEVPASSWORD: ${SS_DEVPASSWORD:-}
       SS_SOFTNAME: ${SS_SOFTNAME:-CartRune}
@@ -115,6 +117,7 @@ services:
       PGPASSWORD: ${DB_PASSWORD:-postgres}
       PGDATABASE: ${DB_NAME:-cartrune}
       QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
       MEDIA_BASE_URL: http://api:8080
     command: ["python", "index_covers.py"]
 
