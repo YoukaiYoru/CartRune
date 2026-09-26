@@ -9,8 +9,17 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import type { BarcodeType } from 'expo-camera';
+import {
+  Camera,
+  useCameraDevice,
+  useCameraPermission,
+  usePhotoOutput,
+  type CameraRef,
+} from 'react-native-vision-camera';
+import {
+  useBarcodeScannerOutput,
+  type TargetBarcodeFormat,
+} from 'react-native-vision-camera-barcode-scanner';
 import { Image } from 'expo-image';
 import { analyzeCover, embedPhoto } from '@/services/embeddings';
 import { setEmbedding } from '@/lib/embedding-cache';
@@ -25,15 +34,32 @@ import Animated, { FadeInUp, SlideInUp } from 'react-native-reanimated';
 type ScanMethod = 'barcode' | 'text' | 'embedding';
 type ProcessingStep = 'capture' | 'upload' | 'visual' | 'metadata' | 'catalog';
 
-const BARCODE_TYPES: BarcodeType[] = ['ean13', 'ean8', 'upc_a', 'upc_e'];
+const BARCODE_FORMATS: TargetBarcodeFormat[] = ['ean-13', 'ean-8', 'upc-a', 'upc-e'];
 const LIVE_INTERVAL_MS = 2500;
 const LIVE_START_DELAY_MS = 500;
 
 export function Scanner({ preset }: { preset?: string }) {
   const router = useRouter();
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
-  const cameraRef = useRef<CameraView>(null);
-  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraRef>(null);
+  const { hasPermission, requestPermission } = useCameraPermission();
+  const device = useCameraDevice('back');
+  const photoOutput = usePhotoOutput({
+    containerFormat: 'jpeg',
+    quality: 0.7,
+    qualityPrioritization: 'balanced',
+  });
+  const barcodeOutput = useBarcodeScannerOutput({
+    barcodeFormats: BARCODE_FORMATS,
+    outputResolution: 'preview',
+    onBarcodeScanned: (barcodes) => {
+      const barcode = barcodes[0];
+      if (barcode?.rawValue) {
+        handleBarcodeScanned({ type: barcode.format, data: barcode.rawValue });
+      }
+    },
+    onError: (error) => console.warn('[scanner] barcode output failed', error),
+  });
   const [activeMethod, setActiveMethod] = useState<ScanMethod | null>(
     preset && (preset === 'barcode' || preset === 'text' || preset === 'embedding')
       ? preset
@@ -45,7 +71,7 @@ export function Scanner({ preset }: { preset?: string }) {
   const [ocrUnavailable, setOcrUnavailable] = useState(false);
   const handledRef = useRef(false);
 
-  // Live Google Lens-style analysis state.
+  // Continuous preview analysis state.
   const [liveActive, setLiveActive] = useState(false);
   const [liveStatus, setLiveStatus] = useState<
     'idle' | 'analyzing' | 'found' | 'notfound' | 'error'
@@ -99,7 +125,7 @@ export function Scanner({ preset }: { preset?: string }) {
   // Continuous live scan loop (Google Lens style). Takes a photo, analyzes it
   // and shows the top match on the camera view without leaving the screen.
   useEffect(() => {
-    if (!liveActive || !liveSupported || !permission?.granted) return;
+    if (!liveActive || !liveSupported || !hasPermission || !device) return;
     let cancelled = false;
 
     const tick = async () => {
@@ -107,20 +133,20 @@ export function Scanner({ preset }: { preset?: string }) {
       liveLoopRef.current = true;
       setLiveStatus('analyzing');
       try {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.5 });
+        const photoUri = await capturePhotoUri();
         if (cancelled) return;
-        setLivePhoto(photo.uri);
+        setLivePhoto(photoUri);
 
         if (activeMethod === 'embedding') {
-          const embedding = await embedPhoto(photo.uri);
-          setEmbedding(photo.uri, embedding);
+          const embedding = await embedPhoto(photoUri);
+          setEmbedding(photoUri, embedding);
           const res = await matchEmbedding(embedding);
           if (cancelled) return;
           const top = res.matches[0] ?? null;
           setLiveResult(top);
           setLiveStatus(top ? 'found' : 'notfound');
         } else if (activeMethod === 'text') {
-          const text = await recognizeTextSafe(photo.uri);
+          const text = await recognizeTextSafe(photoUri);
           if (!cancelled && text) {
             const ocrLines = text
               .split('\n')
@@ -156,7 +182,13 @@ export function Scanner({ preset }: { preset?: string }) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       liveLoopRef.current = false;
     };
-  }, [liveActive, activeMethod, liveSupported, permission?.granted]);
+  }, [liveActive, activeMethod, liveSupported, hasPermission, device]);
+
+  const capturePhotoUri = async () => {
+    const photo = await photoOutput.capturePhoto({ flashMode: 'off' }, {});
+    const path = await photo.saveToTemporaryFileAsync();
+    return path.startsWith('file://') ? path : `file://${path}`;
+  };
 
   const stopLive = () => {
     setLiveActive(false);
@@ -198,21 +230,21 @@ export function Scanner({ preset }: { preset?: string }) {
     setIsCapturing(true);
     setProcessingStep('capture');
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
+      const photoUri = await capturePhotoUri();
       console.info(`[scanner] cover captured method=${activeMethod}`);
       handledRef.current = true;
       stopLive();
       setProcessingStep('upload');
 
       if (activeMethod === 'text') {
-        const captureKey = rememberScanCapture(photo.uri);
+        const captureKey = rememberScanCapture(photoUri);
         if (!isOcrAvailable()) {
           setOcrUnavailable(true);
           setIsCapturing(false);
           return;
         }
         try {
-          const text = await recognizeTextSafe(photo.uri);
+          const text = await recognizeTextSafe(photoUri);
           if (text === null) {
             setOcrUnavailable(true);
             setIsCapturing(false);
@@ -247,14 +279,14 @@ export function Scanner({ preset }: { preset?: string }) {
       }
 
       if (activeMethod === 'embedding') {
-        const captureKey = rememberScanCapture(photo.uri);
+        const captureKey = rememberScanCapture(photoUri);
         try {
           // MobileCLIP y Qwen son inferencias pesadas en el mismo servidor.
           // Secuenciarlas evita que compitan por CPU/RAM y provoquen timeouts.
           setProcessingStep('visual');
-          const embedding = await embedPhoto(photo.uri);
+          const embedding = await embedPhoto(photoUri);
           setProcessingStep('metadata');
-          const analysis = await analyzeCover(photo.uri)
+          const analysis = await analyzeCover(photoUri)
             .then((value) =>
               value.title || value.console || value.region || value.edition || value.publisher
                 ? value
@@ -262,7 +294,7 @@ export function Scanner({ preset }: { preset?: string }) {
             )
             .catch(() => null);
           setProcessingStep('catalog');
-          setEmbedding(photo.uri, embedding);
+          setEmbedding(photoUri, embedding);
           setProcessingStep(null);
           router.push({
             pathname: '/scanner/results',
@@ -290,7 +322,7 @@ export function Scanner({ preset }: { preset?: string }) {
 
       router.push({
         pathname: '/scanner/results',
-        params: { method: activeMethod!, capture_key: rememberScanCapture(photo.uri) },
+        params: { method: activeMethod!, capture_key: rememberScanCapture(photoUri) },
       });
     } catch {
       setIsCapturing(false);
@@ -298,7 +330,7 @@ export function Scanner({ preset }: { preset?: string }) {
     }
   };
 
-  if (!permission) {
+  if (!hasPermission) {
     return (
       <View style={styles.container}>
         <View style={styles.permissionCard}>
@@ -309,7 +341,7 @@ export function Scanner({ preset }: { preset?: string }) {
     );
   }
 
-  if (!permission.granted) {
+  if (!hasPermission) {
     return (
       <View style={styles.container}>
         <View style={styles.permissionCard}>
@@ -317,7 +349,7 @@ export function Scanner({ preset }: { preset?: string }) {
           <Text style={styles.cameraSubtext}>
             CartRune uses the camera to scan barcodes and game covers.
           </Text>
-          <Pressable style={styles.permissionButton} onPress={requestPermission}>
+          <Pressable style={styles.permissionButton} onPress={() => void requestPermission()}>
             <Text style={styles.permissionButtonText}>Grant access</Text>
           </Pressable>
         </View>
@@ -328,13 +360,14 @@ export function Scanner({ preset }: { preset?: string }) {
   return (
     <View style={styles.container}>
       <View style={styles.cameraWrap}>
-        <CameraView
+        <Camera
           key={`camera-${cameraEpoch}`}
           ref={cameraRef}
           style={StyleSheet.absoluteFill}
-          facing="back"
-          barcodeScannerSettings={{ barcodeTypes: BARCODE_TYPES }}
-          onBarcodeScanned={handleBarcodeScanned}
+          device={device ?? 'back'}
+          isActive={hasPermission}
+          outputs={activeMethod === 'barcode' ? [photoOutput, barcodeOutput] : [photoOutput]}
+          resizeMode="cover"
         />
 
         <View style={styles.overlayGlow}>

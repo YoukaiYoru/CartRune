@@ -6,6 +6,7 @@ import {
   FlatList,
   Pressable,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -25,6 +26,28 @@ import { Ionicons } from '@expo/vector-icons';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const FILTERS = ['All', 'Playing', 'Completed', 'Backlog'];
+
+function FilterChip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={[styles.filter, active && styles.filterActive]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={`Filter by ${label}`}
+    >
+      <Text style={[styles.filterText, active && styles.filterTextActive]}>{label}</Text>
+    </Pressable>
+  );
+}
 
 function ShelfGameCard({
   item,
@@ -92,15 +115,21 @@ function ShelfGameCard({
 
 export function Library() {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [activePlatform, setActivePlatform] = useState('All consoles');
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const { library, isLoading } = usePrimaryLibrary();
 
   const allGames = library?.games ?? [];
+  const platforms = Array.from(
+    new Set(allGames.map((game) => game.platform?.trim()).filter(Boolean)),
+  ) as string[];
   const filtered =
-    activeFilter === 'All'
-      ? allGames
-      : allGames.filter((g) => g.status === activeFilter.toLowerCase());
+    allGames.filter((game) => {
+      const matchesStatus = activeFilter === 'All' || game.status === activeFilter.toLowerCase();
+      const matchesPlatform = activePlatform === 'All consoles' || game.platform === activePlatform;
+      return matchesStatus && matchesPlatform;
+    });
 
   const renderItem = useCallback(
     ({ item, index }: { item: LibraryGame; index: number }) => (
@@ -122,23 +151,24 @@ export function Library() {
         </Text>
       </View>
 
-      <FlatList
-        horizontal
-        data={FILTERS}
-        keyExtractor={(item) => item}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filters}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[styles.filter, activeFilter === item && styles.filterActive]}
-            onPress={() => setActiveFilter(item)}
-          >
-            <Text style={[styles.filterText, activeFilter === item && styles.filterTextActive]}>
-              {item}
-            </Text>
-          </Pressable>
-        )}
-      />
+      <View style={styles.filterArea}>
+        <Text style={styles.filterLabel}>STATUS</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+          {FILTERS.map((item) => (
+            <FilterChip key={item} label={item} active={activeFilter === item} onPress={() => setActiveFilter(item)} />
+          ))}
+        </ScrollView>
+        {platforms.length > 0 ? (
+          <>
+            <Text style={styles.filterLabel}>CONSOLE</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+              {['All consoles', ...platforms].map((item) => (
+                <FilterChip key={item} label={item} active={activePlatform === item} onPress={() => setActivePlatform(item)} />
+              ))}
+            </ScrollView>
+          </>
+        ) : null}
+      </View>
 
       <View style={styles.shelfWrapper}>
         {isLoading ? (
@@ -188,13 +218,15 @@ const styles = StyleSheet.create({
   eyebrow: { color: theme.accent.muted, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginBottom: 7 },
   title: { color: theme.text.primary, fontSize: 30, fontWeight: '800' },
   count: { color: theme.text.muted, fontSize: 12, marginTop: 5 },
-  filters: { paddingHorizontal: 20, paddingVertical: 14, gap: 8 },
+  filterArea: { paddingTop: 8, paddingBottom: 10 },
+  filterLabel: { color: theme.text.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1.4, marginLeft: 20, marginTop: 5, marginBottom: 6 },
+  filters: { paddingHorizontal: 20, gap: 7 },
   filter: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: theme.bg.panel,
-    marginRight: 8,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
+    marginRight: 0,
     borderWidth: 1,
     borderColor: theme.border.subtle,
   },
@@ -210,33 +242,32 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 8,
   },
-  shelfRow: { justifyContent: 'space-between', marginBottom: 16 },
+  shelfRow: { justifyContent: 'space-between', marginBottom: 10 },
   gameCase: {
-    width: '48%',
-    marginBottom: 4,
+    width: '49%',
+    marginBottom: 2,
   },
   gameCover: {
     width: '100%',
     aspectRatio: 0.7,
-    borderRadius: 8,
+    borderRadius: 0,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    backgroundColor: theme.bg.surface,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
   },
-  coverImage: { width: '100%', height: '100%', backgroundColor: theme.bg.surface },
+  coverImage: { width: '100%', height: '100%', backgroundColor: 'transparent' },
   gameEmoji: { fontSize: 32, opacity: 0.6 },
   spine: {
     height: 3,
-    backgroundColor: theme.shelf.edge,
-    marginHorizontal: 2,
-    borderRadius: 1,
+    backgroundColor: 'transparent',
+    marginHorizontal: 0,
+    borderRadius: 0,
   },
   gameInfo: {
     paddingHorizontal: 2,
-    paddingTop: 4,
+    paddingTop: 3,
   },
   gameTitle: { color: theme.text.primary, fontSize: 11, fontWeight: '600', lineHeight: 15 },
   gamePlatform: { color: theme.text.muted, fontSize: 10, marginTop: 2 },

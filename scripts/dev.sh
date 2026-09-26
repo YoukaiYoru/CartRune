@@ -10,6 +10,7 @@ command -v go >/dev/null 2>&1 || { echo "Falta Go." >&2; exit 1; }
 command -v python3 >/dev/null 2>&1 || { echo "Falta Python 3." >&2; exit 1; }
 
 EXPO_MODE="${DEV_EXPO_MODE:-lan}"
+DEV_EXPO_CLIENT="${DEV_EXPO_CLIENT:-1}"
 API_HOST="${DEV_API_HOST:-}"
 WITH_EMBEDDINGS="${DEV_WITH_EMBEDDINGS:-1}"
 WITH_QWEN="${DEV_WITH_QWEN:-0}"
@@ -160,14 +161,26 @@ fi
 
 export EXPO_PUBLIC_API_HOST="$API_HOST"
 echo
-echo "[CartRune] Expo se iniciará en modo $EXPO_MODE."
+if [[ "$DEV_EXPO_CLIENT" == "1" ]]; then
+  echo "[CartRune] Expo se iniciará en modo development client ($EXPO_MODE)."
+else
+  echo "[CartRune] Expo se iniciará en modo Expo Go ($EXPO_MODE)."
+fi
 echo "[CartRune] API visible para el móvil: http://$API_HOST:8080"
-echo "[CartRune] Escanea el QR que aparecerá abajo con Expo Go. Ctrl+C detiene los procesos."
+if [[ "$DEV_EXPO_CLIENT" == "1" ]]; then
+  echo "[CartRune] Abre el development build instalado en el dispositivo. Ctrl+C detiene los procesos."
+else
+  echo "[CartRune] Escanea el QR que aparecerá abajo con Expo Go. Ctrl+C detiene los procesos."
+fi
 echo
 
 cd apps/mobile
+EXPO_ARGS=(start)
+if [[ "$DEV_EXPO_CLIENT" == "1" ]]; then
+  EXPO_ARGS+=(--dev-client)
+fi
 case "$EXPO_MODE" in
-  tunnel) exec npx expo start --tunnel ;;
-  localhost) exec npx expo start --localhost ;;
-  *) exec npx expo start --lan ;;
+  tunnel) exec npx expo "${EXPO_ARGS[@]}" --tunnel ;;
+  localhost) exec npx expo "${EXPO_ARGS[@]}" --localhost ;;
+  *) exec npx expo "${EXPO_ARGS[@]}" --lan ;;
 esac

@@ -1,0 +1,80 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: cartrune-ollama
+    restart: unless-stopped
+    command: ["serve"]
+    volumes:
+      - ollamadata:/root/.ollama
+
+  embeddings:
+    build:
+      context: ../../apps/embeddings
+    container_name: cartrune-embeddings
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    environment:
+      PYTHONUNBUFFERED: "1"
+      HF_HOME: /root/.cache/huggingface
+      VISION_PROVIDER: ollama
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
+      VLLM_ENABLED: "0"
+      VLLM_TIMEOUT: ${VLLM_TIMEOUT:-120}
+      VLLM_MAX_TOKENS: ${VLLM_MAX_TOKENS:-96}
+    volumes:
+      - hfdata:/root/.cache/huggingface
+    ports:
+      - "127.0.0.1:8700:8700"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8700/health')"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  api:
+    build:
+      context: ../../apps/api
+    container_name: cartrune-api
+    restart: unless-stopped
+    depends_on:
+      embeddings:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: production
+      SERVER_PORT: "8080"
+      DB_HOST: ${DB_HOST:?DB_HOST is required}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:?DB_USER is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DB_NAME: ${DB_NAME:-cartrune}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      EMBEDDINGS_URL: http://embeddings:8700
+      QDRANT_HOST: ${QDRANT_HOST:?QDRANT_HOST is required}
+      QDRANT_PORT: ${QDRANT_PORT:-6334}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      SS_DEVID: ${SS_DEVID:-}
+      SS_DEVPASSWORD: ${SS_DEVPASSWORD:-}
+      SS_SOFTNAME: ${SS_SOFTNAME:-CartRune}
+      SS_USERID: ${SS_USERID:-}
+      SS_USERPASSWORD: ${SS_USERPASSWORD:-}
+      SS_BASE_URL: ${SS_BASE_URL:-https://api.screenscraper.fr/api2/}
+      SS_TIMEOUT: ${SS_TIMEOUT:-20s}
+      SS_MIN_DELAY: ${SS_MIN_DELAY:-1500ms}
+      SS_MAX_RETRY: ${SS_MAX_RETRY:-2}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  ollamadata:
+  hfdata:

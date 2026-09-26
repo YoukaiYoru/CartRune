@@ -17,6 +17,9 @@
       "**/*"
     ],
     "android": {
+      "permissions": [
+        "CAMERA"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0d1021"
@@ -35,12 +38,6 @@
         }
       ],
       "expo-secure-store",
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "CartRune needs camera access to scan game covers and barcodes."
-        }
-      ],
       "expo-asset",
       "expo-font",
       [

@@ -7,10 +7,11 @@ import {
   Pressable,
   ActivityIndicator,
   TextInput,
+  Modal,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { scanBarcode, scanText, matchEmbedding } from '@/services/scanner';
 import { embedPhoto } from '@/services/embeddings';
 import { getEmbedding, setEmbedding } from '@/lib/embedding-cache';
@@ -90,7 +91,12 @@ export function ScannerResults() {
   const matchSource = data?.match_source ?? (method === 'embedding' ? 'visual' : 'catalog');
   const methodKey = method ?? 'barcode';
   const [selectedMatchKey, setSelectedMatchKey] = useState<string | null>(null);
+  const [choiceOpen, setChoiceOpen] = useState(false);
   const selectedMatch = results.find((item) => matchKey(item) === selectedMatchKey) ?? results[0];
+
+  useEffect(() => {
+    if (results.length > 0) setChoiceOpen(true);
+  }, [results.length]);
 
 
   const renderState = () => {
@@ -188,6 +194,21 @@ export function ScannerResults() {
     <View style={styles.container}>
       <ScreenHeader title={`${methodLabel[methodKey]} Results`} showBack />
 
+      <MatchChoiceModal
+        visible={choiceOpen}
+        items={results.slice(0, 3)}
+        source={matchSource}
+        selectedKey={matchKey(selectedMatch)}
+        onSelect={(item) => {
+          setSelectedMatchKey(matchKey(item));
+          setChoiceOpen(false);
+        }}
+        onClose={() => {
+          setSelectedMatchKey(matchKey(results[0]));
+          setChoiceOpen(false);
+        }}
+      />
+
       <ScrollView
         style={styles.resultsScroll}
         contentContainerStyle={styles.resultsContent}
@@ -228,6 +249,72 @@ export function ScannerResults() {
         )}
       </ScrollView>
     </View>
+  );
+}
+
+function MatchChoiceModal({
+  visible,
+  items,
+  source,
+  selectedKey,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  items: ScanResponse['matches'];
+  source: 'visual' | 'catalog';
+  selectedKey: string;
+  onSelect: (item: ScanResponse['matches'][number]) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.choiceBackdrop}>
+        <View style={styles.choiceSheet}>
+          <View style={styles.choiceHandle} />
+          <View style={styles.choiceHeader}>
+            <View style={styles.choiceHeaderCopy}>
+              <Text style={styles.choiceEyebrow}>MATCH REVIEW</Text>
+              <Text style={styles.choiceTitle}>Choose the closest cover</Text>
+              <Text style={styles.choiceSubtitle}>Different regions or editions may have different artwork.</Text>
+            </View>
+            <Pressable onPress={onClose} style={styles.choiceClose} accessibilityLabel="Close match options">
+              <Text style={styles.choiceCloseText}>×</Text>
+            </Pressable>
+          </View>
+          <View style={styles.choiceList}>
+            {items.map((item, index) => (
+              <Pressable
+                key={matchKey(item)}
+                style={[styles.choiceItem, matchKey(item) === selectedKey && styles.choiceItemSelected]}
+                onPress={() => onSelect(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${item.title}, option ${index + 1}`}
+              >
+                {item.cover_url ? (
+                  <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.choiceImage} contentFit="contain" />
+                ) : (
+                  <View style={styles.choiceImagePlaceholder}><Text style={styles.choicePlaceholderText}>🎮</Text></View>
+                )}
+                <View style={styles.choiceCopy}>
+                  <Text style={styles.choiceItemTitle} numberOfLines={2}>{item.title}</Text>
+                  <Text style={styles.choiceItemMeta} numberOfLines={1}>
+                    {[item.platform, item.region].filter(Boolean).join(' · ') || 'Release details unavailable'}
+                  </Text>
+                  <Text style={styles.choiceItemScore}>
+                    {source === 'visual' ? `${Math.round(item.similarity * 100)}% visual similarity` : 'Catalog match'}
+                  </Text>
+                </View>
+                <Text style={styles.choiceChevron}>›</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable style={styles.choiceUseFirst} onPress={onClose}>
+            <Text style={styles.choiceUseFirstText}>Review first result</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -554,6 +641,29 @@ function ImportPanel({ onImported, initialQuery }: { onImported: () => void; ini
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg.deep },
+  choiceBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(3,6,14,0.72)' },
+  choiceSheet: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 22, borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: theme.bg.deep, borderWidth: 1, borderColor: theme.border.subtle },
+  choiceHandle: { alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: theme.border.default, marginBottom: 18 },
+  choiceHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
+  choiceHeaderCopy: { flex: 1 },
+  choiceEyebrow: { color: theme.accent.muted, fontSize: 9, fontWeight: '900', letterSpacing: 1.3 },
+  choiceTitle: { color: theme.text.primary, fontSize: 22, lineHeight: 27, fontWeight: '800', marginTop: 5 },
+  choiceSubtitle: { color: theme.text.muted, fontSize: 12, lineHeight: 17, marginTop: 5, maxWidth: 310 },
+  choiceClose: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg.surface },
+  choiceCloseText: { color: theme.text.secondary, fontSize: 25, lineHeight: 27, fontWeight: '300' },
+  choiceList: { gap: 8 },
+  choiceItem: { minHeight: 88, flexDirection: 'row', alignItems: 'center', padding: 9, borderRadius: 16, backgroundColor: theme.bg.card, borderWidth: 1, borderColor: theme.border.subtle },
+  choiceItemSelected: { borderColor: theme.accent.primary, backgroundColor: theme.bg.elevated },
+  choiceImage: { width: 56, height: 70, backgroundColor: 'transparent' },
+  choiceImagePlaceholder: { width: 56, height: 70, alignItems: 'center', justifyContent: 'center' },
+  choicePlaceholderText: { fontSize: 24, opacity: 0.5 },
+  choiceCopy: { flex: 1, marginHorizontal: 11 },
+  choiceItemTitle: { color: theme.text.primary, fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  choiceItemMeta: { color: theme.text.muted, fontSize: 11, marginTop: 4 },
+  choiceItemScore: { color: theme.accent.warm, fontSize: 10, fontWeight: '800', marginTop: 6 },
+  choiceChevron: { color: theme.text.muted, fontSize: 27, fontWeight: '300', paddingHorizontal: 3 },
+  choiceUseFirst: { minHeight: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 14, backgroundColor: theme.accent.warm },
+  choiceUseFirstText: { color: theme.bg.deep, fontSize: 13, fontWeight: '900' },
   bodyWrap: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   photoWrap: { alignItems: 'center', paddingTop: 12, paddingBottom: 4 },
   resultsScroll: { flex: 1 },
