@@ -45,7 +45,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      APP_ENV: production
+      # Initial deployment is HTTP on port 8080. Move to production only
+      # after placing TLS in front of this service.
+      APP_ENV: staging
       SERVER_PORT: "8080"
       DB_HOST: ${DB_HOST:?DB_HOST is required}
       DB_PORT: ${DB_PORT:-5432}
@@ -59,6 +61,7 @@ services:
       QDRANT_HOST: ${QDRANT_HOST:?QDRANT_HOST is required}
       QDRANT_PORT: ${QDRANT_PORT:-6334}
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      QDRANT_USE_TLS: ${QDRANT_USE_TLS:-false}
       SS_DEVID: ${SS_DEVID:-}
       SS_DEVPASSWORD: ${SS_DEVPASSWORD:-}
       SS_SOFTNAME: ${SS_SOFTNAME:-CartRune}

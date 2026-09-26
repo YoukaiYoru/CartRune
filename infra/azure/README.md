@@ -2,6 +2,8 @@
 
 Esta configuración despliega únicamente la API Go, el servicio Python de embeddings y Ollama. PostgreSQL y Qdrant son servicios externos y deben ser accesibles desde la VM de Azure, preferiblemente mediante Tailscale o una red privada.
 
+La configuración inicial usa `APP_ENV=staging` y HTTP en el puerto 8080 para facilitar la primera comprobación desde la app móvil. Antes de una publicación real, coloca HTTPS delante de la API y cambia `APP_ENV` a `production`; el binario exige certificados cuando se usa ese entorno.
+
 ## Requisitos de la VM
 
 - Ubuntu 22.04
