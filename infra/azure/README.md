@@ -1,6 +1,6 @@
 # CartRune: API + Ollama en Azure
 
-Esta configuración despliega únicamente la API Go, el servicio Python de embeddings y Ollama. PostgreSQL y Qdrant son servicios externos y deben ser accesibles desde la VM de Azure, preferiblemente mediante Tailscale o una red privada.
+Esta configuración despliega únicamente la API Go, el servicio Python de embeddings y Ollama. PostgreSQL vive en Supabase y Qdrant en Qdrant Cloud; la VM solo debe poder salir a Internet para conectarse a ellos.
 
 La configuración inicial usa `APP_ENV=staging` y HTTP en el puerto 8080 para facilitar la primera comprobación desde la app móvil. Antes de una publicación real, coloca HTTPS delante de la API y cambia `APP_ENV` a `production`; el binario exige certificados cuando se usa ese entorno.
 
@@ -11,6 +11,17 @@ La configuración inicial usa `APP_ENV=staging` y HTTP en el puerto 8080 para fa
 - Docker Engine y Docker Compose v2
 - Puerto público: solo `8080` (la API)
 - No exponer públicamente `5432`, `6333`, `6334` ni `11434`
+
+## Valores externos
+
+En Supabase abre **Connect** y usa preferiblemente **Session pooler**: coloca su
+host en `DB_HOST`, el usuario completo (`postgres.<project-ref>`) en `DB_USER`,
+el puerto `5432` y `DB_SSLMODE=require`. Para migraciones evita el pooler en
+modo transaction (`6543`), porque la API ejecuta `AutoMigrate` al iniciar.
+
+En Qdrant Cloud copia el endpoint y elimina `https://` de `QDRANT_HOST`.
+Usa `QDRANT_PORT=6334`, la API key del cluster y `QDRANT_USE_TLS=true`.
+No confundas el endpoint REST `6333` con el endpoint gRPC que usa esta API.
 
 ## Primer despliegue
 

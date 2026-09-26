@@ -19,6 +19,14 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+for required in DB_HOST DB_USER DB_PASSWORD QDRANT_HOST QDRANT_API_KEY JWT_SECRET; do
+  value="$(awk -F= -v key="$required" '$1 == key {print substr($0, index($0, "=") + 1)}' "$ENV_FILE")"
+  if [[ -z "$value" || "$value" == replace-* || "$value" == YOUR_* ]]; then
+    echo "Missing or placeholder value for $required in $ENV_FILE" >&2
+    exit 1
+  fi
+done
+
 "${COMPOSE[@]}" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config >/dev/null
 "${COMPOSE[@]}" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --build
 
