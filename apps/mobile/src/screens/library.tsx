@@ -95,7 +95,7 @@ function ShelfGameCard({
               transition={150}
             />
           ) : (
-            <Text style={styles.gameEmoji}>🎮</Text>
+            <Ionicons name="game-controller-outline" size={30} color={theme.text.muted} />
           )}
         </View>
         <View style={styles.spine} />

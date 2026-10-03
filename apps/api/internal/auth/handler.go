@@ -18,6 +18,7 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) Register(c fiber.Ctx) error {
+	noStore(c)
 	var req RegisterRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
@@ -29,6 +30,9 @@ func (h *Handler) Register(c fiber.Ctx) error {
 
 	tokens, err := h.service.Register(req)
 	if err != nil {
+		if errors.Is(err, ErrInvalidRegistration) {
+			return response.Error(c, fiber.StatusBadRequest, "invalid registration data")
+		}
 		if err.Error() == "email already registered" || err.Error() == "username already taken" {
 			return response.Error(c, fiber.StatusConflict, err.Error())
 		}
@@ -39,6 +43,7 @@ func (h *Handler) Register(c fiber.Ctx) error {
 }
 
 func (h *Handler) Login(c fiber.Ctx) error {
+	noStore(c)
 	var req LoginRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
@@ -50,6 +55,9 @@ func (h *Handler) Login(c fiber.Ctx) error {
 
 	tokens, err := h.service.Login(req)
 	if err != nil {
+		if errors.Is(err, ErrInvalidLogin) {
+			return response.Error(c, fiber.StatusBadRequest, "invalid email or password")
+		}
 		if err.Error() == "invalid credentials" {
 			return response.Error(c, fiber.StatusUnauthorized, err.Error())
 		}
@@ -60,6 +68,7 @@ func (h *Handler) Login(c fiber.Ctx) error {
 }
 
 func (h *Handler) Refresh(c fiber.Ctx) error {
+	noStore(c)
 	var req RefreshRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
@@ -78,6 +87,7 @@ func (h *Handler) Refresh(c fiber.Ctx) error {
 }
 
 func (h *Handler) Logout(c fiber.Ctx) error {
+	noStore(c)
 	var req RefreshRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
@@ -86,6 +96,11 @@ func (h *Handler) Logout(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusInternalServerError, "failed to logout")
 	}
 	return response.NoContent(c)
+}
+
+func noStore(c fiber.Ctx) {
+	c.Set("Cache-Control", "no-store")
+	c.Set("Pragma", "no-cache")
 }
 
 func (h *Handler) Me(c fiber.Ctx) error {

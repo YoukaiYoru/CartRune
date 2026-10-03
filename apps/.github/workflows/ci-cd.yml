@@ -1,0 +1,196 @@
+name: CartRune CI/CD
+
+on:
+  pull_request:
+    paths:
+      - "api/**"
+      - "embeddings/**"
+      - "deploy/**"
+      - ".github/workflows/ci-cd.yml"
+  push:
+    branches: [main]
+    paths:
+      - "api/**"
+      - "embeddings/**"
+      - "deploy/**"
+      - ".github/workflows/ci-cd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cartrune-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/cartrune
+
+jobs:
+  api-test:
+    name: API tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+      - run: go vet ./...
+      - run: go test ./...
+
+  embeddings-check:
+    name: Embeddings checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: embeddings
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m compileall -q service.py mobileclip_engine.py ocr_engine.py qwen_engine.py
+      - run: docker build --file Dockerfile --tag cartrune-embeddings:ci .
+
+  mobile-typecheck:
+    name: Mobile typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+
+  publish:
+    name: Publish Docker images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [api-test, embeddings-check, mobile-typecheck]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      api_image: ghcr.io/youkaiyoru/cartrune-api:sha-${{ github.sha }}
+      embeddings_image: ghcr.io/youkaiyoru/cartrune-embeddings:sha-${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: API image metadata
+        id: api-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}-api
+          tags: |
+            type=raw,value=sha-${{ github.sha }}
+            type=raw,value=latest
+      - name: Build and push API
+        id: api-push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          file: ./api/Dockerfile
+          push: true
+          tags: ${{ steps.api-meta.outputs.tags }}
+          labels: ${{ steps.api-meta.outputs.labels }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      - name: API image attestation
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.IMAGE_PREFIX }}-api
+          subject-digest: ${{ steps.api-push.outputs.digest }}
+          push-to-registry: true
+      - name: Embeddings image metadata
+        id: embeddings-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}-embeddings
+          tags: |
+            type=raw,value=sha-${{ github.sha }}
+            type=raw,value=latest
+      - name: Build and push embeddings
+        id: embeddings-push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./embeddings
+          file: ./embeddings/Dockerfile
+          push: true
+          tags: ${{ steps.embeddings-meta.outputs.tags }}
+          labels: ${{ steps.embeddings-meta.outputs.labels }}
+          cache-from: type=gha,scope=embeddings
+          cache-to: type=gha,mode=max,scope=embeddings
+      - name: Embeddings image attestation
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.IMAGE_PREFIX }}-embeddings
+          subject-digest: ${{ steps.embeddings-push.outputs.digest }}
+          push-to-registry: true
+
+  deploy:
+    name: Deploy to Azure VM
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: publish
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+      - name: Copy production Compose file
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          source: deploy/compose.production.yml
+          target: /opt/cartrune
+          strip_components: 1
+      - name: Pull and restart services
+        uses: appleboy/ssh-action@v1
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN }}
+          GHCR_USER: ${{ secrets.GHCR_DEPLOY_USER }}
+          API_IMAGE: ${{ needs.publish.outputs.api_image }}
+          EMBEDDINGS_IMAGE: ${{ needs.publish.outputs.embeddings_image }}
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          envs: GHCR_TOKEN,GHCR_USER,API_IMAGE,EMBEDDINGS_IMAGE
+          script_stop: true
+          script: |
+            set -eu
+            cd /opt/cartrune
+            test -f .env.api
+            test -f .env.embeddings
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --password-stdin
+            export API_IMAGE EMBEDDINGS_IMAGE
+            docker compose -f compose.production.yml pull
+            docker compose -f compose.production.yml up -d --remove-orphans
+            docker compose -f compose.production.yml ps
+            for attempt in 1 2 3 4 5 6; do
+              if curl --fail --silent --insecure https://127.0.0.1:8080/health/live >/dev/null; then
+                exit 0
+              fi
+              sleep 10
+            done
+            docker compose -f compose.production.yml logs --tail=100 api embeddings
+            exit 1

@@ -16,29 +16,21 @@ import {
   usePhotoOutput,
   type CameraRef,
 } from 'react-native-vision-camera';
-import {
-  useBarcodeScannerOutput,
-  type TargetBarcodeFormat,
-} from 'react-native-vision-camera-barcode-scanner';
 import { Image } from 'expo-image';
 import { analyzeCover, embedPhoto } from '@/services/embeddings';
 import { setEmbedding } from '@/lib/embedding-cache';
 import { rememberScanCapture } from '@/lib/scan-capture';
-import { matchEmbedding, scanText } from '@/services/scanner';
+import { matchEmbedding } from '@/services/scanner';
 import type { MatchResult } from '@/services/types';
-import { isOcrAvailable, recognizeTextSafe } from '@/lib/mlkit';
 import { theme } from '@/theme';
 import { resolveApiUrl } from '@/services/api';
-import Animated, { FadeInUp, SlideInUp } from 'react-native-reanimated';
-
-type ScanMethod = 'barcode' | 'text' | 'embedding';
+import { Ionicons } from '@expo/vector-icons';
 type ProcessingStep = 'capture' | 'upload' | 'visual' | 'metadata' | 'catalog';
 
-const BARCODE_FORMATS: TargetBarcodeFormat[] = ['ean-13', 'ean-8', 'upc-a', 'upc-e'];
 const LIVE_INTERVAL_MS = 2500;
 const LIVE_START_DELAY_MS = 500;
 
-export function Scanner({ preset }: { preset?: string }) {
+export function Scanner() {
   const router = useRouter();
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const cameraRef = useRef<CameraRef>(null);
@@ -49,26 +41,10 @@ export function Scanner({ preset }: { preset?: string }) {
     quality: 0.7,
     qualityPrioritization: 'balanced',
   });
-  const barcodeOutput = useBarcodeScannerOutput({
-    barcodeFormats: BARCODE_FORMATS,
-    outputResolution: 'preview',
-    onBarcodeScanned: (barcodes) => {
-      const barcode = barcodes[0];
-      if (barcode?.rawValue) {
-        handleBarcodeScanned({ type: barcode.format, data: barcode.rawValue });
-      }
-    },
-    onError: (error) => console.warn('[scanner] barcode output failed', error),
-  });
-  const [activeMethod, setActiveMethod] = useState<ScanMethod | null>(
-    preset && (preset === 'barcode' || preset === 'text' || preset === 'embedding')
-      ? preset
-      : 'embedding'
-  );
-  const [showOptions, setShowOptions] = useState(false);
+  const activeMethod = 'embedding' as const;
   const [isCapturing, setIsCapturing] = useState(false);
   const [processingStep, setProcessingStep] = useState<ProcessingStep | null>(null);
-  const [ocrUnavailable, setOcrUnavailable] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const handledRef = useRef(false);
 
   // Continuous preview analysis state.
@@ -87,6 +63,7 @@ export function Scanner({ preset }: { preset?: string }) {
   // successful photo/navigation cycle.
   useFocusEffect(
     useCallback(() => {
+      setIsFocused(true);
       handledRef.current = false;
       setIsCapturing(false);
       setProcessingStep(null);
@@ -96,27 +73,14 @@ export function Scanner({ preset }: { preset?: string }) {
       setLivePhoto(null);
       setCameraEpoch((value) => value + 1);
       return () => {
+        setIsFocused(false);
         liveLoopRef.current = false;
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
       };
     }, [])
   );
 
-  useEffect(() => {
-    if (!preset) return;
-    if (preset === activeMethod) return;
-    handledRef.current = false;
-    setActiveMethod(
-      preset === 'barcode' || preset === 'text' || preset === 'embedding'
-        ? (preset as ScanMethod)
-        : null
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preset]);
-
-  const liveSupported =
-    activeMethod === 'embedding' ||
-    (activeMethod === 'text' && isOcrAvailable());
+  const liveSupported = true;
   // A physical game case is close to a 3:4 portrait rectangle. This guide
   // adapts to the viewport while leaving room for the camera controls.
   const frameWidth = Math.min(viewportWidth * 0.64, 242);
@@ -145,26 +109,6 @@ export function Scanner({ preset }: { preset?: string }) {
           const top = res.matches[0] ?? null;
           setLiveResult(top);
           setLiveStatus(top ? 'found' : 'notfound');
-        } else if (activeMethod === 'text') {
-          const text = await recognizeTextSafe(photoUri);
-          if (!cancelled && text) {
-            const ocrLines = text
-              .split('\n')
-              .map((l) => l.trim())
-              .filter((l) => l.length > 1)
-              .slice(0, 5)
-              .join('\n');
-            if (ocrLines) {
-              const res = await scanText(ocrLines);
-              const top = res.matches[0] ?? null;
-              setLiveResult(top);
-              setLiveStatus(top ? 'found' : 'notfound');
-            } else {
-              setLiveStatus('notfound');
-            }
-          } else if (!cancelled) {
-            setLiveStatus('notfound');
-          }
         }
       } catch {
         if (!cancelled) setLiveStatus('error');
@@ -197,32 +141,14 @@ export function Scanner({ preset }: { preset?: string }) {
     setLivePhoto(null);
   };
 
-  const resetScan = (method: ScanMethod) => {
-    handledRef.current = false;
-    stopLive();
-    setActiveMethod(method);
-    setShowOptions(false);
-    setOcrUnavailable(false);
-  };
-
   const openLiveResults = () => {
-    if (activeMethod && livePhoto) {
+    if (livePhoto) {
       const captureKey = rememberScanCapture(livePhoto);
       router.push({
         pathname: '/scanner/results',
         params: { method: activeMethod, capture_key: captureKey },
       });
     }
-  };
-
-  const handleBarcodeScanned = (result: { type: string; data: string }) => {
-    if (activeMethod !== 'barcode' || handledRef.current) return;
-    handledRef.current = true;
-    stopLive();
-    router.push({
-      pathname: '/scanner/results',
-      params: { method: 'barcode', value: result.data, type: result.type },
-    });
   };
 
   const handleCapture = async () => {
@@ -236,51 +162,8 @@ export function Scanner({ preset }: { preset?: string }) {
       stopLive();
       setProcessingStep('upload');
 
-      if (activeMethod === 'text') {
-        const captureKey = rememberScanCapture(photoUri);
-        if (!isOcrAvailable()) {
-          setOcrUnavailable(true);
-          setIsCapturing(false);
-          return;
-        }
-        try {
-          const text = await recognizeTextSafe(photoUri);
-          if (text === null) {
-            setOcrUnavailable(true);
-            setIsCapturing(false);
-            setProcessingStep(null);
-            return;
-          }
-          setProcessingStep('catalog');
-          const ocrLines = text
-            .split('\n')
-            .map((l) => l.trim())
-            .filter((l) => l.length > 1)
-            .slice(0, 5)
-            .join('\n');
-          setProcessingStep(null);
-          router.push({
-            pathname: '/scanner/results',
-            params: {
-              method: 'text',
-              capture_key: captureKey,
-              ...(ocrLines ? { value: ocrLines } : {}),
-            },
-          });
-          return;
-        } catch {
-          setProcessingStep(null);
-          router.push({
-            pathname: '/scanner/results',
-            params: { method: 'text', capture_key: captureKey },
-          });
-          return;
-        }
-      }
-
-      if (activeMethod === 'embedding') {
-        const captureKey = rememberScanCapture(photoUri);
-        try {
+      const captureKey = rememberScanCapture(photoUri);
+      try {
           // MobileCLIP y Qwen son inferencias pesadas en el mismo servidor.
           // Secuenciarlas evita que compitan por CPU/RAM y provoquen timeouts.
           setProcessingStep('visual');
@@ -301,11 +184,10 @@ export function Scanner({ preset }: { preset?: string }) {
             params: {
               method: 'embedding',
               capture_key: captureKey,
-              embedding: JSON.stringify(embedding),
               ...(analysis ? { analysis: JSON.stringify(analysis) } : {}),
             },
           });
-        } catch (err) {
+      } catch (err) {
           setProcessingStep(null);
           router.push({
             pathname: '/scanner/results',
@@ -316,14 +198,7 @@ export function Scanner({ preset }: { preset?: string }) {
               error: err instanceof Error ? err.message : String(err),
             },
           });
-        }
-        return;
       }
-
-      router.push({
-        pathname: '/scanner/results',
-        params: { method: activeMethod!, capture_key: rememberScanCapture(photoUri) },
-      });
     } catch {
       setIsCapturing(false);
       setProcessingStep(null);
@@ -334,24 +209,26 @@ export function Scanner({ preset }: { preset?: string }) {
     return (
       <View style={styles.container}>
         <View style={styles.permissionCard}>
-          <Text style={styles.cameraText}>Camera</Text>
-          <Text style={styles.cameraSubtext}>Requesting camera access...</Text>
+          <Text style={styles.cameraText}>Camera permission needed</Text>
+          <Text style={styles.cameraSubtext}>
+            CartRune uses the camera and AI to identify game covers.
+          </Text>
+          <Pressable style={styles.permissionButton} onPress={() => void requestPermission()}>
+            <Text style={styles.permissionButtonText}>Grant access</Text>
+          </Pressable>
         </View>
       </View>
     );
   }
 
-  if (!hasPermission) {
+  if (!device) {
     return (
       <View style={styles.container}>
         <View style={styles.permissionCard}>
-          <Text style={styles.cameraText}>Camera permission needed</Text>
+          <Text style={styles.cameraText}>Camera unavailable</Text>
           <Text style={styles.cameraSubtext}>
-            CartRune uses the camera to scan barcodes and game covers.
+            This device does not expose a usable back camera. Try again on a physical device.
           </Text>
-          <Pressable style={styles.permissionButton} onPress={() => void requestPermission()}>
-            <Text style={styles.permissionButtonText}>Grant access</Text>
-          </Pressable>
         </View>
       </View>
     );
@@ -364,9 +241,9 @@ export function Scanner({ preset }: { preset?: string }) {
           key={`camera-${cameraEpoch}`}
           ref={cameraRef}
           style={StyleSheet.absoluteFill}
-          device={device ?? 'back'}
-          isActive={hasPermission}
-          outputs={activeMethod === 'barcode' ? [photoOutput, barcodeOutput] : [photoOutput]}
+          device={device}
+          isActive={hasPermission && isFocused}
+          outputs={[photoOutput]}
           resizeMode="cover"
         />
 
@@ -377,17 +254,11 @@ export function Scanner({ preset }: { preset?: string }) {
             <View style={styles.targetCornerBottomLeft} />
             <View style={styles.targetCornerBottomRight} />
           </View>
-          <Text style={styles.scanModeLabel}>{activeMethod ? activeMethod.toUpperCase() : 'COVER SCANNER'}</Text>
+          <Text style={styles.scanModeLabel}>AI COVER SCANNER</Text>
           <Text style={styles.overlayHint}>
-            {activeMethod === 'barcode'
-              ? 'Point at the barcode on the box'
-              : activeMethod === 'text'
-                ? 'Align the cover edges inside the frame'
-                : 'Align the four cover edges inside the frame'}
+            Align the four cover edges inside the frame
           </Text>
-          {activeMethod !== 'barcode' ? (
-            <Text style={styles.overlayDistance}>Move closer until one cover fills the frame</Text>
-          ) : null}
+          <Text style={styles.overlayDistance}>Move closer until one cover fills the frame</Text>
 
           {/* Live Lens result overlay */}
           {liveActive && (
@@ -408,7 +279,7 @@ export function Scanner({ preset }: { preset?: string }) {
                 <View style={styles.liveError}>
                   <Text style={styles.liveErrorTitle}>Cover analysis unavailable</Text>
                   <Text style={styles.liveErrorText}>
-                    Try again, or use barcode mode.
+                    Try again or move the cover into better light.
                   </Text>
                 </View>
               ) : liveStatus === 'found' && liveResult ? (
@@ -417,7 +288,7 @@ export function Scanner({ preset }: { preset?: string }) {
                     <Image source={{ uri: resolveApiUrl(liveResult.cover_url) }} style={styles.liveCover} contentFit="contain" />
                   ) : (
                     <View style={styles.liveCoverPlaceholder}>
-                      <Text style={styles.liveCoverEmoji}>🎮</Text>
+                      <Ionicons name="game-controller-outline" size={22} color={theme.text.muted} />
                     </View>
                   )}
                   <View style={styles.liveInfo}>
@@ -448,27 +319,17 @@ export function Scanner({ preset }: { preset?: string }) {
             </View>
           )}
         </View>
-      </View>
 
-      {!activeMethod ? (
-        <Animated.View entering={FadeInUp.delay(200).springify()}>
-          <Pressable style={styles.scanButton} onPress={() => setShowOptions(true)}>
-            <Text style={styles.scanButtonText}>START SCAN</Text>
-          </Pressable>
-        </Animated.View>
-      ) : null}
-
-      {activeMethod && activeMethod !== 'barcode' && (
-        <View style={styles.controls}>
+      <View style={styles.controls}>
           <Pressable
-            style={[styles.shutterButton, (isCapturing || ocrUnavailable || liveActive) && styles.shutterDisabled]}
+            style={[styles.shutterButton, (isCapturing || liveActive) && styles.shutterDisabled]}
             onPress={handleCapture}
-            disabled={isCapturing || ocrUnavailable || liveActive}
+            disabled={isCapturing || liveActive}
             accessibilityRole="button"
             accessibilityLabel="Capture cover"
           >
             <View style={styles.shutterRing}>
-              <View style={[styles.shutterCore, (isCapturing || ocrUnavailable || liveActive) && styles.shutterCoreBusy]} />
+              <View style={[styles.shutterCore, (isCapturing || liveActive) && styles.shutterCoreBusy]} />
             </View>
           </Pressable>
           {liveSupported && (
@@ -479,67 +340,12 @@ export function Scanner({ preset }: { preset?: string }) {
               accessibilityLabel={liveActive ? 'Stop live scan' : 'Start live scan'}
             >
               <Text style={[styles.liveToggleText, liveActive && styles.liveToggleTextOn]}>
-                {liveActive ? 'Live on' : '🔴 Live'}
+                {liveActive ? 'Live on' : 'Live scan'}
               </Text>
             </Pressable>
           )}
         </View>
-      )}
-
-      {ocrUnavailable && (
-        <View style={styles.ocrWarning}>
-          <Text style={styles.ocrWarningText}>
-			No text was detected. Make sure the catalog services are reachable
-			and the cover is well-lit, then try again.
-          </Text>
-        </View>
-      )}
-
-      {activeMethod && (
-        <Pressable style={styles.openModalButton} onPress={() => setShowOptions(true)} accessibilityRole="button" accessibilityLabel="Change scan method">
-          <Text style={styles.openModalText}>Switch method</Text>
-        </Pressable>
-      )}
-
-      <Modal visible={showOptions} transparent animationType="slide">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowOptions(false)}>
-          <Animated.View entering={SlideInUp.springify()} style={styles.modalContent}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Scan Method</Text>
-            <Text style={styles.modalSubtitle}>How do you want to identify it?</Text>
-
-            <Pressable style={styles.optionCard} onPress={() => resetScan('barcode')}>
-              <Text style={styles.optionIcon}>📊</Text>
-              <View style={styles.optionInfo}>
-                <Text style={styles.optionTitle}>Barcode</Text>
-                <Text style={styles.optionDesc}>Scan EAN/UPC on the box</Text>
-              </View>
-            </Pressable>
-
-            <Pressable style={styles.optionCard} onPress={() => resetScan('text')}>
-              <Text style={styles.optionIcon}>🔤</Text>
-              <View style={styles.optionInfo}>
-                <Text style={styles.optionTitle}>Text / OCR</Text>
-                <Text style={styles.optionDesc}>
-                  {isOcrAvailable() ? 'Read title from cover' : 'Requires a native build (not in Expo Go)'}
-                </Text>
-              </View>
-            </Pressable>
-
-            <Pressable style={styles.optionCard} onPress={() => resetScan('embedding')}>
-              <Text style={styles.optionIcon}>🧠</Text>
-              <View style={styles.optionInfo}>
-                <Text style={styles.optionTitle}>Cover Match</Text>
-                <Text style={styles.optionDesc}>Match the cover artwork</Text>
-              </View>
-            </Pressable>
-
-            <Pressable style={styles.cancelButton} onPress={() => setShowOptions(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-          </Animated.View>
-        </Pressable>
-      </Modal>
+      </View>
 
       <Modal
         visible={processingStep !== null}
@@ -560,7 +366,7 @@ export function Scanner({ preset }: { preset?: string }) {
             </Text>
 
             <ProcessingRow
-              icon="📸"
+              icon="CAM"
               label="Photo captured"
               active={processingStep === 'capture'}
               complete={['upload', 'visual', 'metadata', 'catalog'].includes(processingStep ?? '')}
@@ -790,30 +596,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   liveSearchingText: { color: theme.text.secondary, fontSize: 13, marginLeft: 10 },
-  ocrWarning: {
-    position: 'absolute',
-    bottom: 132,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    maxWidth: 300,
-  },
-  ocrWarningText: { color: theme.accent.warm, fontSize: 12, fontWeight: '600', textAlign: 'center' },
-  openModalButton: {
-    position: 'absolute',
-    bottom: 18,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    minHeight: 40,
-    borderRadius: 20,
-    zIndex: 20,
-    elevation: 20,
-  },
-  openModalText: { color: theme.text.primary, fontSize: 13, fontWeight: '600' },
   cameraText: { color: theme.text.primary, fontSize: 16, fontWeight: '600' },
   cameraSubtext: {
     color: theme.text.muted,
@@ -840,57 +622,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   permissionButtonText: { color: theme.bg.deep, fontWeight: '700', fontSize: 14 },
-  scanButton: {
-    backgroundColor: theme.accent.warm,
-    marginHorizontal: 16,
-    marginBottom: 24,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  scanButtonText: { color: theme.bg.deep, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: theme.bg.card,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 36,
-  },
-  modalHandle: {
-    width: 36,
-    height: 3,
-    backgroundColor: theme.border.default,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: { color: theme.text.primary, fontSize: 20, fontWeight: '700' },
-  modalSubtitle: { color: theme.text.muted, fontSize: 13, marginTop: 4, marginBottom: 16 },
-  optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.bg.surface,
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: theme.border.subtle,
-  },
-  optionIcon: { fontSize: 24, marginRight: 12 },
-  optionInfo: { flex: 1 },
-  optionTitle: { color: theme.text.primary, fontSize: 15, fontWeight: '600' },
-  optionDesc: { color: theme.text.muted, fontSize: 12, marginTop: 2 },
-  cancelButton: {
-    marginTop: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  cancelText: { color: theme.accent.warm, fontSize: 15, fontWeight: '600' },
   processingBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(9, 8, 14, 0.88)',

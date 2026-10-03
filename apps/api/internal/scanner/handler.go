@@ -3,6 +3,7 @@ package scanner
 import (
 	"context"
 	"log"
+	"math"
 	"strings"
 	"time"
 
@@ -29,7 +30,7 @@ func (h *Handler) Barcode(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
 
-	if strings.TrimSpace(req.Barcode) == "" {
+	if strings.TrimSpace(req.Barcode) == "" || len([]rune(req.Barcode)) > 32 {
 		return response.Error(c, fiber.StatusBadRequest, "barcode is required")
 	}
 
@@ -50,8 +51,11 @@ func (h *Handler) Text(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
 
-	if strings.TrimSpace(req.Text) == "" {
+	if strings.TrimSpace(req.Text) == "" || len([]rune(req.Text)) > 120 {
 		return response.Error(c, fiber.StatusBadRequest, "text is required")
+	}
+	if len([]rune(req.PlatformHint)) > 64 {
+		return response.Error(c, fiber.StatusBadRequest, "platform hint is too long")
 	}
 
 	started := time.Now()
@@ -85,9 +89,14 @@ func (h *Handler) Match(c fiber.Ctx) error {
 	if len(req.Embedding) != vector.DefaultDims {
 		return response.Error(c, fiber.StatusBadRequest, "invalid embedding dimension")
 	}
+	for _, value := range req.Embedding {
+		if math.IsNaN(value) || math.IsInf(value, 0) || math.Abs(value) > 10 {
+			return response.Error(c, fiber.StatusBadRequest, "invalid embedding values")
+		}
+	}
 
 	started := time.Now()
-	scan, err := h.service.MatchEmbedding(req.Embedding, req.PlatformHint)
+	scan, err := h.service.MatchEmbedding(c.Context(), req.Embedding, req.PlatformHint)
 	h.record(c.Context(), middleware.GetUserID(c), "embedding", scan, err, started)
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, "failed to match embedding")

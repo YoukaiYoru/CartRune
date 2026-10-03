@@ -15,6 +15,7 @@ import { usePrimaryLibrary, useAddGameToLibrary } from '@/hooks/useCollections';
 import { theme } from '@/theme';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { resolveApiUrl } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 
 export function GameDetail({ id }: { id: string }) {
   const router = useRouter();
@@ -60,7 +61,7 @@ export function GameDetail({ id }: { id: string }) {
               transition={200}
             />
           ) : (
-            <Text style={styles.coverEmoji}>🎮</Text>
+            <Ionicons name="game-controller-outline" size={42} color={theme.text.muted} />
           )}
         </View>
       </Animated.View>

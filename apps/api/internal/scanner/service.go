@@ -35,13 +35,15 @@ func coverURLFor(g models.Game) string {
 }
 
 func (s *Service) ScanBarcode(ctx context.Context, barcode string) (*ScanResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
 	barcode = strings.Map(func(r rune) rune {
 		if r >= '0' && r <= '9' {
 			return r
 		}
 		return -1
 	}, barcode)
-	gamesList, err := s.gameRepo.FindByBarcode(barcode)
+	gamesList, err := s.gameRepo.FindByBarcode(ctx, barcode)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +77,7 @@ func (s *Service) ScanBarcode(ctx context.Context, barcode string) (*ScanRespons
 		}
 	}
 
-	result := &ScanResponse{Matches: matches, Method: "barcode"}
+	result := &ScanResponse{Matches: matches, Method: "barcode", MatchSource: "catalog"}
 	if usedFallback {
 		result.Fallback = "screenscraper"
 	}
@@ -83,7 +85,9 @@ func (s *Service) ScanBarcode(ctx context.Context, barcode string) (*ScanRespons
 }
 
 func (s *Service) ScanText(ctx context.Context, text string, platformHint string) (*ScanResponse, error) {
-	gamesList, err := s.gameRepo.FindByText(text, platformHint)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	gamesList, err := s.gameRepo.FindByText(ctx, text, platformHint)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +121,7 @@ func (s *Service) ScanText(ctx context.Context, text string, platformHint string
 		}
 	}
 
-	result := &ScanResponse{Matches: matches, Method: "text"}
+	result := &ScanResponse{Matches: matches, Method: "text", MatchSource: "catalog"}
 	if usedFallback {
 		result.Fallback = "screenscraper"
 	}
@@ -128,7 +132,7 @@ func (s *Service) ScanText(ctx context.Context, text string, platformHint string
 // unrelated covers are not surfaced to the user.
 var scoreThreshold float32 = 0.30
 
-func (s *Service) MatchEmbedding(embedding []float64, platformHint string) (*ScanResponse, error) {
+func (s *Service) MatchEmbedding(parent context.Context, embedding []float64, platformHint string) (*ScanResponse, error) {
 	if s.vectorSvc == nil {
 		return nil, errors.New("vector store unavailable")
 	}
@@ -138,7 +142,7 @@ func (s *Service) MatchEmbedding(embedding []float64, platformHint string) (*Sca
 		vec[i] = float32(v)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(parent, 5*time.Second)
 	defer cancel()
 	// Fetch a wider candidate pool before applying platform hints. Filtering
 	// only the first ten nearest covers can discard the correct release when a
@@ -172,8 +176,9 @@ func (s *Service) MatchEmbedding(embedding []float64, platformHint string) (*Sca
 	}
 
 	return &ScanResponse{
-		Matches: results,
-		Method:  "embedding",
+		Matches:     results,
+		Method:      "embedding",
+		MatchSource: "visual",
 	}, nil
 }
 

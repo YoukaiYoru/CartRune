@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { theme } from '@/theme';
 import { resolveApiUrl } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -70,7 +71,7 @@ export function GameCard({
             placeholder={BLURHASH}
           />
         ) : (
-          <Text style={styles.coverEmoji}>🎮</Text>
+          <Ionicons name="game-controller-outline" size={34} color={theme.text.muted} />
         )}
         <View style={styles.coverShine} />
       </View>

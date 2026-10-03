@@ -1,6 +1,7 @@
 package games
 
 import (
+	"context"
 	"strings"
 
 	"github.com/YoukaiYoru/api/internal/models"
@@ -160,10 +161,10 @@ func (r *Repository) GetPrimaryCovers(gameIDs []uuid.UUID) (map[uuid.UUID]models
 	return byGame, nil
 }
 
-func (r *Repository) FindByBarcode(barcode string) ([]models.Game, error) {
+func (r *Repository) FindByBarcode(ctx context.Context, barcode string) ([]models.Game, error) {
 	// Search in releases or a future barcode field
 	var games []models.Game
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Joins("JOIN releases ON releases.game_id = games.id").
 		Where("releases.barcode = ?", barcode).
 		Preload("Platforms").
@@ -175,7 +176,7 @@ func (r *Repository) FindByBarcode(barcode string) ([]models.Game, error) {
 	return games, err
 }
 
-func (r *Repository) FindByText(query, platformHint string) ([]models.Game, error) {
+func (r *Repository) FindByText(ctx context.Context, query, platformHint string) ([]models.Game, error) {
 	var games []models.Game
 	lines := make([]string, 0, 5)
 	for _, line := range strings.Split(query, "\n") {
@@ -187,7 +188,7 @@ func (r *Repository) FindByText(query, platformHint string) ([]models.Game, erro
 	if len(lines) == 0 {
 		lines = []string{strings.TrimSpace(query)}
 	}
-	db := r.db
+	db := r.db.WithContext(ctx)
 	clauses := make([]string, 0, len(lines))
 	args := make([]any, 0, len(lines))
 	for _, line := range lines {

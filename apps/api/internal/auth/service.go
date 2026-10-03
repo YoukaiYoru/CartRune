@@ -28,6 +28,10 @@ func NewService(repo *Repository, cfg *config.Config) *Service {
 }
 
 func (s *Service) Register(req RegisterRequest) (*TokenResponse, error) {
+	var err error
+	if req, err = normalizeRegisterRequest(req); err != nil {
+		return nil, err
+	}
 	if existing, _ := s.repo.FindByEmail(req.Email); existing != nil {
 		return nil, errors.New("email already registered")
 	}
@@ -50,6 +54,10 @@ func (s *Service) Register(req RegisterRequest) (*TokenResponse, error) {
 }
 
 func (s *Service) Login(req LoginRequest) (*TokenResponse, error) {
+	var err error
+	if req, err = normalizeLoginRequest(req); err != nil {
+		return nil, err
+	}
 	user, err := s.repo.FindByEmail(req.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -108,7 +116,7 @@ func (s *Service) GetCurrentUser(userID uuid.UUID) (*models.User, error) {
 }
 
 func (s *Service) generateTokens(userID uuid.UUID) (*TokenResponse, error) {
-	accessToken, err := s.createToken(userID, 24*time.Hour, "access")
+	accessToken, err := s.createToken(userID, 15*time.Minute, "access")
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +137,7 @@ func (s *Service) generateTokens(userID uuid.UUID) (*TokenResponse, error) {
 	return &TokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		ExpiresIn:    86400,
+		ExpiresIn:    900,
 	}, nil
 }
 

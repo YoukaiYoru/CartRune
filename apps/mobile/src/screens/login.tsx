@@ -13,6 +13,8 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth';
 import { theme } from '@/theme';
 import { ImmersiveBackdrop } from '@/components/immersive-backdrop';
+import { loginSchema, safeAuthMessage } from '@/lib/auth-validation';
+import { Ionicons } from '@expo/vector-icons';
 
 export function Login() {
   const router = useRouter();
@@ -23,16 +25,17 @@ export function Login() {
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      setError('Email and password are required');
+    const parsed = loginSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || 'Enter a valid email and password');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await login(email.trim(), password);
-    } catch (e: any) {
-      setError(e?.response?.data?.error || 'Something went wrong. Try again.');
+      await login(parsed.data.email, parsed.data.password);
+    } catch (e: unknown) {
+      setError(safeAuthMessage(e, 'Could not sign in. Check your credentials and try again.'));
     } finally {
       setLoading(false);
     }
@@ -45,7 +48,7 @@ export function Login() {
     >
       <ImmersiveBackdrop />
       <View style={styles.brand}>
-        <Text style={styles.logo}>📚</Text>
+        <Ionicons name="library-outline" size={48} color={theme.accent.primary} />
         <Text style={styles.title}>CartRune</Text>
         <Text style={styles.subtitle}>Your physical game shelf, organized.</Text>
       </View>
@@ -61,6 +64,10 @@ export function Login() {
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
+          autoComplete="email"
+          textContentType="emailAddress"
+          maxLength={254}
+          spellCheck={false}
         />
 
         <Text style={styles.label}>PASSWORD</Text>
@@ -71,6 +78,9 @@ export function Login() {
           placeholder="••••••••"
           placeholderTextColor={theme.text.muted}
           secureTextEntry
+          autoComplete="current-password"
+          textContentType="password"
+          maxLength={128}
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}

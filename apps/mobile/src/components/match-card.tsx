@@ -6,6 +6,7 @@ import type { MatchResult } from '@/services/types';
 import { usePrimaryLibrary, useAddGameToLibrary } from '@/hooks/useCollections';
 import { theme } from '@/theme';
 import { resolveApiUrl } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   item: MatchResult;
@@ -48,7 +49,7 @@ export function MatchCard({ item, defaultStatus = 'backlog' }: Props) {
           <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.cover} contentFit="contain" />
         ) : (
           <View style={styles.coverPlaceholder}>
-            <Text style={styles.coverText}>🎮</Text>
+            <Ionicons name="game-controller-outline" size={26} color={theme.text.muted} />
           </View>
         )}
         <View style={styles.info}>

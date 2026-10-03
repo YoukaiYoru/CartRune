@@ -26,11 +26,12 @@ import { theme } from '@/theme';
 import { resolveApiUrl } from '@/services/api';
 import type { CoverAnalysis, ScanResponse } from '@/services/types';
 import { useAddGameToLibrary, usePrimaryLibrary } from '@/hooks/useCollections';
+import { Ionicons } from '@expo/vector-icons';
 
 const methodLabel: Record<string, string> = {
-  barcode: 'Barcode Scan',
-  text: 'Text / OCR',
-  embedding: 'Cover Match',
+  barcode: 'AI Scan',
+  text: 'AI Scan',
+  embedding: 'AI Scan',
 };
 
 export function ScannerResults() {
@@ -89,7 +90,7 @@ export function ScannerResults() {
 
   const results = data?.matches ?? [];
   const matchSource = data?.match_source ?? (method === 'embedding' ? 'visual' : 'catalog');
-  const methodKey = method ?? 'barcode';
+  const methodKey = method ?? 'embedding';
   const [selectedMatchKey, setSelectedMatchKey] = useState<string | null>(null);
   const [choiceOpen, setChoiceOpen] = useState(false);
   const selectedMatch = results.find((item) => matchKey(item) === selectedMatchKey) ?? results[0];
@@ -112,7 +113,7 @@ export function ScannerResults() {
     if (isError) {
       return (
         <View style={styles.stateWrap}>
-          <Text style={styles.stateIcon}>🛰️</Text>
+          <Ionicons name="cloud-offline-outline" size={34} color={theme.accent.warm} style={styles.stateIcon} />
           <Text style={styles.stateTitle}>Connection error</Text>
           <Text style={styles.stateText}>Could not reach the server.</Text>
           <Pressable style={styles.tryAgain} onPress={() => refetch()}>
@@ -125,7 +126,7 @@ export function ScannerResults() {
     if (failed === '1') {
       return (
         <View style={styles.stateWrap}>
-          <Text style={styles.stateIcon}>🧠</Text>
+          <Ionicons name="sparkles-outline" size={34} color={theme.accent.primary} style={styles.stateIcon} />
           <Text style={styles.stateTitle}>Could not analyze the cover</Text>
           <Text style={styles.stateText}>
             {error
@@ -139,7 +140,7 @@ export function ScannerResults() {
     if (method === 'embedding' && !embedding) {
       return (
         <View style={styles.stateWrap}>
-          <Text style={styles.stateIcon}>🧠</Text>
+          <Ionicons name="sparkles-outline" size={34} color={theme.accent.primary} style={styles.stateIcon} />
           <Text style={styles.stateTitle}>Analyzing cover...</Text>
           <Text style={styles.stateText}>
             Cover analysis is not ready. Capture the cover again.
@@ -151,7 +152,7 @@ export function ScannerResults() {
     if (method === 'text' && !value) {
       return (
         <View style={styles.stateWrap}>
-          <Text style={styles.stateIcon}>🔤</Text>
+          <Ionicons name="text-outline" size={34} color={theme.accent.primary} style={styles.stateIcon} />
           <Text style={styles.stateTitle}>Extracting text...</Text>
           <Text style={styles.stateText}>
             Cover {photoUri ? 'captured. OCR will read the title next.' : 'capture the cover first.'}
@@ -161,30 +162,21 @@ export function ScannerResults() {
     }
 
     if (results.length === 0) {
-      const fallback = (
-        <View style={styles.fallbackRow}>
-          <Pressable
-            style={styles.fallbackBtn}
-            onPress={() => router.push({ pathname: '/(tabs)/scanner', params: { preset: 'text' } })}
-          >
-            <Text style={styles.fallbackBtnText}>🔤 OCR</Text>
-          </Pressable>
-          <Pressable
-            style={styles.fallbackBtn}
-            onPress={() => router.push({ pathname: '/(tabs)/scanner', params: { preset: 'embedding' } })}
-          >
-            <Text style={styles.fallbackBtnText}>🧠 Visual</Text>
-          </Pressable>
-        </View>
-      );
       return (
         <View style={styles.stateWrap}>
-          <Text style={styles.stateIcon}>🔍</Text>
+          <Ionicons name="search-outline" size={34} color={theme.text.muted} style={styles.stateIcon} />
           <Text style={styles.stateTitle}>No local matches</Text>
           <Text style={styles.stateText}>
             {`No ${methodKey === 'barcode' ? 'game with that barcode' : 'match'} in your catalog.`}
           </Text>
-          {fallback}
+          <Pressable
+            style={styles.tryAgain}
+            onPress={() => router.replace('/(tabs)/scanner')}
+            accessibilityRole="button"
+            accessibilityLabel="Scan another game with AI"
+          >
+            <Text style={styles.tryAgainText}>Scan again</Text>
+          </Pressable>
         </View>
       );
     }
@@ -294,7 +286,7 @@ function MatchChoiceModal({
                 {item.cover_url ? (
                   <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.choiceImage} contentFit="contain" />
                 ) : (
-                  <View style={styles.choiceImagePlaceholder}><Text style={styles.choicePlaceholderText}>🎮</Text></View>
+                  <View style={styles.choiceImagePlaceholder}><Ionicons name="game-controller-outline" size={26} color={theme.text.muted} /></View>
                 )}
                 <View style={styles.choiceCopy}>
                   <Text style={styles.choiceItemTitle} numberOfLines={2}>{item.title}</Text>
@@ -386,7 +378,7 @@ function CoverMatchHero({ item, source }: { item: NonNullable<ScanResponse['matc
             transition={180}
           />
         ) : (
-          <Text style={styles.matchHeroPlaceholder}>🎮</Text>
+          <Ionicons name="game-controller-outline" size={42} color={theme.text.muted} />
         )}
       </View>
       <Text style={styles.matchHeroTitle} numberOfLines={2}>{item.title}</Text>
@@ -418,7 +410,7 @@ function MatchOption({
       {item.cover_url ? (
         <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.matchOptionImage} contentFit="contain" />
       ) : (
-        <View style={styles.matchOptionPlaceholder}><Text>🎮</Text></View>
+        <View style={styles.matchOptionPlaceholder}><Ionicons name="game-controller-outline" size={26} color={theme.text.muted} /></View>
       )}
       <View style={styles.matchOptionInfo}>
         <Text style={styles.matchOptionTitle} numberOfLines={1}>{item.title}</Text>
@@ -574,7 +566,7 @@ function ImportPanel({ onImported, initialQuery }: { onImported: () => void; ini
         </View>
       ) : isError ? (
         <View style={styles.stateWrap}>
-          <Text style={styles.stateIcon}>🛰️</Text>
+          <Ionicons name="cloud-offline-outline" size={34} color={theme.accent.warm} style={styles.stateIcon} />
           <Text style={styles.stateTitle}>Search failed</Text>
           <Text style={styles.stateText}>The extended catalog may be unreachable.</Text>
         </View>
@@ -591,7 +583,7 @@ function ImportPanel({ onImported, initialQuery }: { onImported: () => void; ini
                 <Image source={{ uri: resolveApiUrl(item.cover_url) }} style={styles.coverImage} contentFit="contain" />
               ) : (
                 <View style={styles.coverPlaceholder}>
-                  <Text style={styles.coverText}>🎮</Text>
+                  <Ionicons name="game-controller-outline" size={26} color={theme.text.muted} />
                 </View>
               )}
               <View style={styles.matchInfo}>

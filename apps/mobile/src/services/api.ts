@@ -3,10 +3,17 @@ import axios from 'axios';
 import { tokenStorage } from '@/services/auth';
 
 const FALLBACK_HOST = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
-const API_HOST = process.env.EXPO_PUBLIC_API_HOST || FALLBACK_HOST;
+const configuredHost = process.env.EXPO_PUBLIC_API_HOST?.trim();
+if (!configuredHost && process.env.NODE_ENV === 'production') {
+  throw new Error('EXPO_PUBLIC_API_HOST must be configured for production builds');
+}
+const API_HOST = configuredHost || FALLBACK_HOST;
 const API_ROOT = /^https?:\/\//i.test(API_HOST)
   ? API_HOST.replace(/\/+$/, '')
   : `http://${API_HOST}:8080`;
+if (process.env.NODE_ENV === 'production' && !API_ROOT.startsWith('https://')) {
+  throw new Error('Production API must use HTTPS');
+}
 export const API_BASE = `${API_ROOT}/api/v1`;
 
 /** Resolve API-relative media paths before native image/video components use them. */
@@ -22,6 +29,27 @@ export const api = axios.create({
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
+
+let refreshInFlight: Promise<string | null> | null = null;
+
+async function refreshAccessToken(refreshToken: string): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = axios
+      .post(`${API_BASE}/auth/refresh`, { refresh_token: refreshToken })
+      .then(async ({ data }) => {
+        const newToken = data.data.access_token;
+        const newRefresh = data.data.refresh_token;
+        if (typeof newToken !== 'string' || typeof newRefresh !== 'string') return null;
+        await tokenStorage.setTokens(newToken, newRefresh);
+        return newToken;
+      })
+      .catch(() => null)
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+}
 
 api.interceptors.request.use(async (config) => {
   const token = await tokenStorage.getAccessToken();
@@ -41,23 +69,17 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
-      try {
-        const refreshToken = await tokenStorage.getRefreshToken();
-        if (refreshToken) {
-          const { data } = await axios.post(`${API_BASE}/auth/refresh`, {
-            refresh_token: refreshToken,
-          });
-          const newToken = data.data.access_token;
-          const newRefresh = data.data.refresh_token;
-          await tokenStorage.setTokens(newToken, newRefresh);
+      const refreshToken = await tokenStorage.getRefreshToken();
+      if (refreshToken) {
+        const newToken = await refreshAccessToken(refreshToken);
+        if (newToken) {
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         }
-      } catch {
-        await tokenStorage.clearTokens();
       }
+      await tokenStorage.clearTokens();
     }
     return Promise.reject(error);
   }

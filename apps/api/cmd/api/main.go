@@ -24,7 +24,9 @@ import (
 	"github.com/YoukaiYoru/api/internal/users"
 	"github.com/YoukaiYoru/api/internal/vector"
 	"github.com/YoukaiYoru/api/pkg/database"
+	"github.com/YoukaiYoru/api/pkg/middleware"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
@@ -36,14 +38,23 @@ func main() {
 	if cfg.Environment == "production" && cfg.JWTSecret == "change-me-in-production" {
 		log.Fatal("JWT_SECRET must be configured in production")
 	}
+	if cfg.Environment == "production" && len(cfg.JWTSecret) < 32 {
+		log.Fatal("JWT_SECRET must be at least 32 characters in production")
+	}
 	if cfg.Environment == "production" && (cfg.DBPassword == "" || cfg.DBPassword == "postgres") {
 		log.Fatal("DB_PASSWORD must be configured in production")
+	}
+	if cfg.Environment == "production" && cfg.DBSSLMode == "disable" {
+		log.Fatal("DB_SSLMODE must enable TLS in production")
 	}
 	if cfg.Environment == "production" && (cfg.TLSCertFile == "" || cfg.TLSKeyFile == "") {
 		log.Fatal("TLS_CERT_FILE and TLS_KEY_FILE must be configured in production")
 	}
 	if cfg.Environment == "production" && strings.TrimSpace(cfg.CORSOrigins) == "*" {
 		log.Fatal("CORS_ORIGINS must be explicit in production")
+	}
+	if cfg.Environment == "production" && (cfg.EmbeddingsURL == "" || strings.Contains(cfg.EmbeddingsURL, "localhost")) {
+		log.Fatal("EMBEDDINGS_URL must point to the private AI service in production")
 	}
 	db := database.Connect(cfg)
 	metrics := observability.NewRecorder(db)
@@ -101,6 +112,8 @@ func main() {
 		BodyLimit:    8 * 1024 * 1024,
 		ErrorHandler: customErrorHandler,
 	})
+	app.Use(recover.New())
+	app.Use(middleware.SecurityHeaders(cfg.Environment == "production"))
 	configureCORS(app, cfg.CORSOrigins)
 	app.Get("/health/live", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})

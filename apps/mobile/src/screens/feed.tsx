@@ -3,12 +3,13 @@ import { useFeed } from '@/hooks/useFeed';
 import { theme } from '@/theme';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import type { FeedItem } from '@/services/types';
+import { Ionicons } from '@expo/vector-icons';
 
-const typeEmoji: Record<string, string> = {
-  completed: '🏆',
-  review: '📝',
-  added: '📚',
-  playing: '🎮',
+const typeIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
+  completed: 'trophy-outline',
+  review: 'chatbubble-ellipses-outline',
+  added: 'library-outline',
+  playing: 'game-controller-outline',
 };
 
 function typeLabel(type: string): string {
@@ -63,7 +64,7 @@ export function Feed() {
           renderItem={({ item, index }: { item: FeedItem; index: number }) => (
             <Animated.View entering={FadeInRight.delay(index * 60).springify()}>
               <View style={styles.feedItem}>
-                <Text style={styles.emoji}>{typeEmoji[item.type] || '•'}</Text>
+                <Ionicons name={typeIcon[item.type] || 'ellipse-outline'} size={20} color={theme.accent.primary} style={styles.emoji} />
                 <View style={styles.feedInfo}>
                   <Text style={styles.feedText}>
                     <Text style={styles.feedUser}>{item.username || 'someone'}</Text>{' '}

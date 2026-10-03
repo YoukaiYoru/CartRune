@@ -11,21 +11,9 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { z } from 'zod';
 import { useAuthStore } from '@/store/auth';
 import { theme } from '@/theme';
-
-const registerSchema = z
-  .object({
-    username: z.string().min(2, 'Username must be at least 2 characters'),
-    email: z.string().email('Enter a valid email'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, {
-    message: 'Passwords do not match',
-    path: ['confirm'],
-  });
+import { registerSchema, safeAuthMessage } from '@/lib/auth-validation';
 
 export function Register() {
   const router = useRouter();
@@ -46,9 +34,9 @@ export function Register() {
     setLoading(true);
     setError('');
     try {
-      await register(username.trim(), email.trim(), password);
-    } catch (e: any) {
-      setError(e?.response?.data?.error || 'Something went wrong. Try again.');
+      await register(parsed.data.username, parsed.data.email, parsed.data.password);
+    } catch (e: unknown) {
+      setError(safeAuthMessage(e, 'Could not create the account. Try again.'));
     } finally {
       setLoading(false);
     }
@@ -75,6 +63,8 @@ export function Register() {
             placeholderTextColor={theme.text.muted}
             autoCapitalize="none"
             autoCorrect={false}
+            maxLength={50}
+            spellCheck={false}
           />
 
           <Text style={styles.label}>EMAIL</Text>
@@ -87,6 +77,10 @@ export function Register() {
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
+            autoComplete="email"
+            textContentType="emailAddress"
+            maxLength={254}
+            spellCheck={false}
           />
 
           <Text style={styles.label}>PASSWORD</Text>
@@ -97,6 +91,9 @@ export function Register() {
             placeholder="••••••••"
             placeholderTextColor={theme.text.muted}
             secureTextEntry
+            autoComplete="new-password"
+            textContentType="newPassword"
+            maxLength={128}
           />
 
           <Text style={styles.label}>CONFIRM PASSWORD</Text>
@@ -107,6 +104,9 @@ export function Register() {
             placeholder="••••••••"
             placeholderTextColor={theme.text.muted}
             secureTextEntry
+            autoComplete="new-password"
+            textContentType="newPassword"
+            maxLength={128}
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}

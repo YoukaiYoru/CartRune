@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import axios from 'axios';
 import { tokenStorage } from '@/services/auth';
 import { api } from '@/services/api';
+import { loginSchema, registerPayloadSchema } from '@/lib/auth-validation';
 
 interface User {
   id: string;
@@ -27,7 +29,11 @@ export const useAuthStore = create<AuthState>((set) => {
     try {
       const { data } = await api.get('/me');
       set({ user: data.data, isAuthenticated: true });
-    } catch {
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status !== 401) {
+        // A temporary Azure/API outage must not destroy a valid local session.
+        throw error;
+      }
       await tokenStorage.clearTokens();
       set({ user: null, isAuthenticated: false });
     }
@@ -39,14 +45,16 @@ export const useAuthStore = create<AuthState>((set) => {
     isLoading: true,
 
     login: async (email, password) => {
-      const { data } = await api.post('/auth/login', { email, password });
+      const payload = loginSchema.parse({ email, password });
+      const { data } = await api.post('/auth/login', payload);
       const { access_token, refresh_token } = data.data;
       await tokenStorage.setTokens(access_token, refresh_token);
       await fetchUser();
     },
 
     register: async (username, email, password) => {
-      const { data } = await api.post('/auth/register', { username, email, password });
+      const payload = registerPayloadSchema.parse({ username, email, password });
+      const { data } = await api.post('/auth/register', payload);
       const { access_token, refresh_token } = data.data;
       await tokenStorage.setTokens(access_token, refresh_token);
       await fetchUser();
@@ -70,7 +78,14 @@ export const useAuthStore = create<AuthState>((set) => {
           set({ isLoading: false });
           return;
         }
-        await fetchUser();
+        set({ isAuthenticated: true });
+        try {
+          await fetchUser();
+        } catch {
+          // Keep the session while the API is temporarily unavailable.
+          set({ isLoading: false });
+          return;
+        }
         set({ isLoading: false });
       } catch {
         await tokenStorage.clearTokens();
