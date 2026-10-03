@@ -412,12 +412,8 @@ func (s *Service) importGameInfo(ctx context.Context, g *GameInfo, region, langu
 		// Reuse the release for the same game/platform/region, otherwise add
 		// the missing release to an already-imported game.
 		releaseRegion := pickRegion(region)
-		barcode := extractBarcode(g)
 		var release models.Release
 		releaseQuery := tx.Where("game_id = ? AND platform_id = ? AND region = ?", game.ID, platform.ID, releaseRegion)
-		if barcode != "" {
-			releaseQuery = releaseQuery.Where("barcode = ? OR barcode = ''", barcode)
-		}
 		releaseErr := releaseQuery.First(&release).Error
 		if errors.Is(releaseErr, gorm.ErrRecordNotFound) {
 			release = models.Release{
@@ -425,7 +421,6 @@ func (s *Service) importGameInfo(ctx context.Context, g *GameInfo, region, langu
 				GameID:     game.ID,
 				PlatformID: platform.ID,
 				Region:     releaseRegion,
-				Barcode:    barcode,
 				Physical:   true,
 				Official:   true,
 			}
@@ -529,28 +524,6 @@ func mediaKind(key string) string {
 		return "texture"
 	}
 	return "other"
-}
-
-// extractBarcode does a best-effort extraction of the physical EAN/UPC from the
-// ROM blocks. ScreenScraper exposes barcodes as images, not text, so the ROM
-// serial is the only textual source; numeric codes of valid length win.
-func extractBarcode(g *GameInfo) string {
-	for _, rom := range g.Roms {
-		if rom == nil {
-			continue
-		}
-		serial := strings.TrimSpace(rom.Serial)
-		digits := strings.Map(func(r rune) rune {
-			if r >= '0' && r <= '9' {
-				return r
-			}
-			return -1
-		}, serial)
-		if len(digits) == 12 || len(digits) == 13 {
-			return digits
-		}
-	}
-	return ""
 }
 
 // atoi parses a ScreenScraper string id into an int, returning 0 when unset.

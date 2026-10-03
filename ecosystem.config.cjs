@@ -1,8 +1,6 @@
 const path = require('node:path');
 
 const root = __dirname;
-const embeddingsPython = path.join(root, 'apps/embeddings/.venv/bin/python');
-
 module.exports = {
   apps: [
     {
@@ -14,16 +12,6 @@ module.exports = {
       env: {
         APP_ENV: 'development',
         SERVER_PORT: '8080',
-      },
-    },
-    {
-      name: 'cartrune-embeddings',
-      cwd: path.join(root, 'apps/embeddings'),
-      script: embeddingsPython,
-      args: 'service.py',
-      interpreter: 'none',
-      env: {
-        EMBEDDINGS_PORT: '8700',
       },
     },
     {

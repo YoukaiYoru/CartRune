@@ -32,7 +32,7 @@ func (c *Client) SearchByName(ctx context.Context, name string, systemeID int) (
 }
 
 // SearchByRomName uses ScreenScraper's ROM-name lookup. It is the provider
-// supported path for barcode/serial fallback when the local catalog misses.
+// supported path for catalog fallback when the local catalog misses.
 func (c *Client) SearchByRomName(ctx context.Context, romName string) (*GameInfo, error) {
 	q := c.baseQuery()
 	q.Set("romnom", romName)

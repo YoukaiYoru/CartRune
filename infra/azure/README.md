@@ -1,63 +1,55 @@
-# CartRune: API + Ollama en Azure
+# CartRune en Azure
 
-Esta configuración despliega únicamente la API Go, el servicio Python de embeddings y Ollama. PostgreSQL vive en Supabase y Qdrant en Qdrant Cloud; la VM solo debe poder salir a Internet para conectarse a ellos.
+Despliegue mínimo para `Standard_B2ats_v2` en `chilecentral`.
 
-La configuración inicial usa `APP_ENV=staging` y HTTP en el puerto 8080 para facilitar la primera comprobación desde la app móvil. Antes de una publicación real, coloca HTTPS delante de la API y cambia `APP_ENV` a `production`; el binario exige certificados cuando se usa ese entorno.
+Servicios en VM:
 
-## Requisitos de la VM
+- API Go.
+- Caddy para HTTPS.
 
-- Ubuntu 22.04
-- 2 vCPU y al menos 8 GiB de RAM para `gemma3:4b`
-- Docker Engine y Docker Compose v2
-- Puerto público: solo `8080` (la API)
-- No exponer públicamente `5432`, `6333`, `6334` ni `11434`
+Servicios externos:
 
-## Valores externos
+- Supabase PostgreSQL.
+- ScreenScraper WebAPI.
+- Gemini API para leer la carátula.
 
-En Supabase abre **Connect** y usa preferiblemente **Session pooler**: coloca su
-host en `DB_HOST`, el usuario completo (`postgres.<project-ref>`) en `DB_USER`,
-el puerto `5432` y `DB_SSLMODE=require`. Para migraciones evita el pooler en
-modo transaction (`6543`), porque la API ejecuta `AutoMigrate` al iniciar.
+No se despliegan Qdrant, Ollama, MobileCLIP ni un servicio Python de embeddings.
 
-En Qdrant Cloud copia el endpoint y elimina `https://` de `QDRANT_HOST`.
-Usa `QDRANT_PORT=6334`, la API key del cluster y `QDRANT_USE_TLS=true`.
-No confundas el endpoint REST `6333` con el endpoint gRPC que usa esta API.
+## Configuración inicial
 
-## Primer despliegue
+1. Crea `api-cartrune.duckdns.org` en DuckDNS y apunta el registro a IP pública estática de VM.
+2. Abre TCP `80` y `443` en NSG. Restringe TCP `22` a tu IP.
+3. Instala Docker Compose v2 en VM.
+4. Copia `infra/azure/.env.azure.example` a `infra/azure/.env.azure`.
+5. Completa Supabase, JWT, ScreenScraper y Gemini.
+6. Ejecuta `./infra/azure/deploy-vm.sh`.
 
-```bash
-cd /ruta/CartRune
-cp infra/azure/.env.azure.example infra/azure/.env.azure
-nano infra/azure/.env.azure
-chmod +x infra/azure/deploy-vm.sh
-./infra/azure/deploy-vm.sh
-```
+Caddy obtiene y renueva certificado HTTPS automáticamente.
 
-El script valida la configuración, construye los dos servicios de CartRune, levanta Ollama, descarga el modelo configurado y comprueba `/health/live`.
-
-## Actualizar
-
-```bash
-git pull
-./infra/azure/deploy-vm.sh
-```
-
-## Diagnóstico
-
-```bash
-docker compose --env-file infra/azure/.env.azure \
-  -f infra/azure/docker-compose.azure.yml ps
-
-docker compose --env-file infra/azure/.env.azure \
-  -f infra/azure/docker-compose.azure.yml logs -f api embeddings ollama
-```
-
-## Configuración móvil
-
-Usa la IP pública o el dominio HTTPS de la VM en `apps/mobile/.env`:
+## Variables mínimas
 
 ```env
-EXPO_PUBLIC_API_HOST=http://IP_PUBLICA:8080
+CARTRUNE_DOMAIN=api-cartrune.duckdns.org
+DB_HOST=...
+DB_PORT=5432
+DB_USER=...
+DB_PASSWORD=...
+DB_NAME=postgres
+DB_SSLMODE=require
+JWT_SECRET=...
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash-lite
+SS_DEVID=...
+SS_DEVPASSWORD=...
+SS_SOFTNAME=CartRune
+CORS_ORIGINS=*
 ```
 
-Para producción, coloca HTTPS delante de la API con un dominio y Caddy, Azure Application Gateway o Cloudflare Tunnel. No publiques Ollama directamente.
+## Actualización
+
+```bash
+git pull origin master
+./infra/azure/deploy-vm.sh
+```
+
+Habrá caída breve mientras Compose reconstruye y reinicia API.

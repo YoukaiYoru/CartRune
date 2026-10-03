@@ -7,20 +7,22 @@ import (
 )
 
 type Config struct {
-	ServerPort  string
-	DBHost      string
-	DBPort      string
-	DBUser      string
-	DBPassword  string
-	DBName      string
-	DBSSLMode   string
-	JWTSecret   string
-	Environment string
-	TLSCertFile string
-	TLSKeyFile  string
-	CORSOrigins string
-	// EmbeddingsURL is internal-only; mobile clients must never call it directly.
-	EmbeddingsURL string
+	ServerPort    string
+	DBHost        string
+	DBPort        string
+	DBUser        string
+	DBPassword    string
+	DBName        string
+	DBSSLMode     string
+	JWTSecret     string
+	Environment   string
+	TLSCertFile   string
+	TLSKeyFile    string
+	TLSTerminated bool
+	CORSOrigins   string
+	GeminiAPIKey  string
+	GeminiModel   string
+	GeminiTimeout time.Duration
 
 	// ScreenScraper API credentials (see docs/screenscraper-api.md)
 	SSDevID        string
@@ -38,12 +40,6 @@ type Config struct {
 	// media proxy (defaults: 60 requests per minute).
 	MediaRateLimit  int
 	MediaRateWindow time.Duration
-
-	// Qdrant vector store for visual matching (gRPC port 6334).
-	QdrantHost   string
-	QdrantPort   int
-	QdrantAPIKey string
-	QdrantUseTLS bool
 }
 
 func Load() *Config {
@@ -59,8 +55,11 @@ func Load() *Config {
 		Environment:   getEnv("APP_ENV", "development"),
 		TLSCertFile:   getEnv("TLS_CERT_FILE", ""),
 		TLSKeyFile:    getEnv("TLS_KEY_FILE", ""),
+		TLSTerminated: getEnvBool("TLS_TERMINATED", false),
 		CORSOrigins:   getEnv("CORS_ORIGINS", "*"),
-		EmbeddingsURL: getEnv("EMBEDDINGS_URL", "http://localhost:8700"),
+		GeminiAPIKey:  getEnv("GEMINI_API_KEY", ""),
+		GeminiModel:   getEnv("GEMINI_MODEL", "gemini-2.5-flash-lite"),
+		GeminiTimeout: getEnvDuration("GEMINI_TIMEOUT", 45*time.Second),
 
 		SSDevID:        getEnv("SS_DEVID", ""),
 		SSDevPassword:  getEnv("SS_DEVPASSWORD", ""),
@@ -75,11 +74,6 @@ func Load() *Config {
 
 		MediaRateLimit:  getEnvInt("MEDIA_RATE_LIMIT", 60),
 		MediaRateWindow: getEnvDuration("MEDIA_RATE_WINDOW", time.Minute),
-
-		QdrantHost:   getEnv("QDRANT_HOST", "localhost"),
-		QdrantPort:   getEnvInt("QDRANT_PORT", 6334),
-		QdrantAPIKey: getEnv("QDRANT_API_KEY", ""),
-		QdrantUseTLS: getEnvBool("QDRANT_USE_TLS", false),
 	}
 }
 

@@ -17,10 +17,8 @@ import {
   type CameraRef,
 } from 'react-native-vision-camera';
 import { Image } from 'expo-image';
-import { analyzeCover, embedPhoto } from '@/services/embeddings';
-import { setEmbedding } from '@/lib/embedding-cache';
+import { analyzeCover } from '@/services/gemini';
 import { rememberScanCapture } from '@/lib/scan-capture';
-import { matchEmbedding } from '@/services/scanner';
 import type { MatchResult } from '@/services/types';
 import { theme } from '@/theme';
 import { resolveApiUrl } from '@/services/api';
@@ -41,7 +39,7 @@ export function Scanner() {
     quality: 0.7,
     qualityPrioritization: 'balanced',
   });
-  const activeMethod = 'embedding' as const;
+  const activeMethod = 'photo' as const;
   const [isCapturing, setIsCapturing] = useState(false);
   const [processingStep, setProcessingStep] = useState<ProcessingStep | null>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -101,15 +99,7 @@ export function Scanner() {
         if (cancelled) return;
         setLivePhoto(photoUri);
 
-        if (activeMethod === 'embedding') {
-          const embedding = await embedPhoto(photoUri);
-          setEmbedding(photoUri, embedding);
-          const res = await matchEmbedding(embedding);
-          if (cancelled) return;
-          const top = res.matches[0] ?? null;
-          setLiveResult(top);
-          setLiveStatus(top ? 'found' : 'notfound');
-        }
+        setLiveStatus('notfound');
       } catch {
         if (!cancelled) setLiveStatus('error');
       } finally {
@@ -164,10 +154,6 @@ export function Scanner() {
 
       const captureKey = rememberScanCapture(photoUri);
       try {
-          // MobileCLIP y Qwen son inferencias pesadas en el mismo servidor.
-          // Secuenciarlas evita que compitan por CPU/RAM y provoquen timeouts.
-          setProcessingStep('visual');
-          const embedding = await embedPhoto(photoUri);
           setProcessingStep('metadata');
           const analysis = await analyzeCover(photoUri)
             .then((value) =>
@@ -177,12 +163,11 @@ export function Scanner() {
             )
             .catch(() => null);
           setProcessingStep('catalog');
-          setEmbedding(photoUri, embedding);
           setProcessingStep(null);
           router.push({
             pathname: '/scanner/results',
             params: {
-              method: 'embedding',
+              method: 'photo',
               capture_key: captureKey,
               ...(analysis ? { analysis: JSON.stringify(analysis) } : {}),
             },
@@ -192,7 +177,7 @@ export function Scanner() {
           router.push({
             pathname: '/scanner/results',
             params: {
-              method: 'embedding',
+              method: 'photo',
               capture_key: captureKey,
               failed: '1',
               error: err instanceof Error ? err.message : String(err),

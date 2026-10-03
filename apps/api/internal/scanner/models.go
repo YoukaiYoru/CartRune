@@ -1,17 +1,8 @@
 package scanner
 
-type BarcodeRequest struct {
-	Barcode string `json:"barcode"`
-}
-
 type TextRequest struct {
 	Text         string `json:"text"`
 	PlatformHint string `json:"platform_hint,omitempty"`
-}
-
-type MatchRequest struct {
-	Embedding    []float64 `json:"embedding"`
-	PlatformHint string    `json:"platform_hint,omitempty"`
 }
 
 type MatchResult struct {
@@ -22,6 +13,15 @@ type MatchResult struct {
 	Region     string  `json:"region"`
 	CoverURL   string  `json:"cover_url"`
 	Similarity float64 `json:"similarity"`
+}
+
+type CoverAnalysis struct {
+	Title     string `json:"title"`
+	Console   string `json:"console"`
+	Region    string `json:"region"`
+	Edition   string `json:"edition"`
+	Publisher string `json:"publisher"`
+	Query     string `json:"query"`
 }
 
 type ScanResponse struct {

@@ -12,9 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { scanBarcode, scanText, matchEmbedding } from '@/services/scanner';
-import { embedPhoto } from '@/services/embeddings';
-import { getEmbedding, setEmbedding } from '@/lib/embedding-cache';
+import { scanText } from '@/services/scanner';
 import { getScanCapture } from '@/lib/scan-capture';
 import { Image } from 'expo-image';
 import {
@@ -29,14 +27,13 @@ import { useAddGameToLibrary, usePrimaryLibrary } from '@/hooks/useCollections';
 import { Ionicons } from '@expo/vector-icons';
 
 const methodLabel: Record<string, string> = {
-  barcode: 'AI Scan',
   text: 'AI Scan',
-  embedding: 'AI Scan',
+  photo: 'AI Scan',
 };
 
 export function ScannerResults() {
   const router = useRouter();
-  const { method, value, photo, capture_key, failed, error, analysis: analysisParam, embedding: embeddingParam } = useLocalSearchParams<{
+  const { method, value, photo, capture_key, failed, error, analysis: analysisParam } = useLocalSearchParams<{
     method: string;
     value?: string;
     photo?: string;
@@ -45,7 +42,6 @@ export function ScannerResults() {
     failed?: string;
     error?: string;
     analysis?: string;
-    embedding?: string;
   }>();
 
   const analysis = parseAnalysis(analysisParam);
@@ -54,27 +50,11 @@ export function ScannerResults() {
   // console labels makes ScreenScraper return weaker or malformed candidates.
   const analysisQuery = analysis?.title || analysis?.query || [analysis?.console, analysis?.region].filter(Boolean).join(' ');
 
-  const cachedEmbedding = photoUri ? getEmbedding(photoUri) ?? parseEmbedding(embeddingParam) : undefined;
-  const recoveredEmbeddingQuery = useQuery({
-    queryKey: ['scanner', 'recover-embedding', photoUri],
-    queryFn: async () => {
-      if (!photoUri) throw new Error('cover photo is missing');
-      const recovered = await embedPhoto(photoUri);
-      setEmbedding(photoUri, recovered);
-      return recovered;
-    },
-    enabled: method === 'embedding' && !!photoUri && !cachedEmbedding,
-    retry: 1,
-  });
-  const embedding = cachedEmbedding ?? recoveredEmbeddingQuery.data;
-
   const scanFn =
-    method === 'barcode' && value
-      ? () => scanBarcode(value)
-    : method === 'text' && value
+    method === 'text' && value
       ? () => scanText(value)
-    : method === 'embedding' && embedding
-      ? () => scanEmbeddingWithFallback(embedding, analysis, analysisQuery)
+    : method === 'photo' && analysisQuery
+      ? () => scanText(analysisQuery, analysis?.console)
       : null;
 
   const noopFn: () => Promise<ScanResponse> = async () => ({
@@ -89,8 +69,8 @@ export function ScannerResults() {
   });
 
   const results = data?.matches ?? [];
-  const matchSource = data?.match_source ?? (method === 'embedding' ? 'visual' : 'catalog');
-  const methodKey = method ?? 'embedding';
+  const matchSource = data?.match_source ?? 'catalog';
+  const methodKey = method ?? 'photo';
   const [selectedMatchKey, setSelectedMatchKey] = useState<string | null>(null);
   const [choiceOpen, setChoiceOpen] = useState(false);
   const selectedMatch = results.find((item) => matchKey(item) === selectedMatchKey) ?? results[0];
@@ -131,19 +111,7 @@ export function ScannerResults() {
           <Text style={styles.stateText}>
             {error
               ? `Error: ${error}`
-              : 'The embedding service is offline. Try again from the scanner.'}
-          </Text>
-        </View>
-      );
-    }
-
-    if (method === 'embedding' && !embedding) {
-      return (
-        <View style={styles.stateWrap}>
-          <Ionicons name="sparkles-outline" size={34} color={theme.accent.primary} style={styles.stateIcon} />
-          <Text style={styles.stateTitle}>Analyzing cover...</Text>
-          <Text style={styles.stateText}>
-            Cover analysis is not ready. Capture the cover again.
+              : 'Gemini could not analyze the cover. Try again from the scanner.'}
           </Text>
         </View>
       );
@@ -167,7 +135,7 @@ export function ScannerResults() {
           <Ionicons name="search-outline" size={34} color={theme.text.muted} style={styles.stateIcon} />
           <Text style={styles.stateTitle}>No local matches</Text>
           <Text style={styles.stateText}>
-            {`No ${methodKey === 'barcode' ? 'game with that barcode' : 'match'} in your catalog.`}
+            {`No catalog match for this cover.`}
           </Text>
           <Pressable
             style={styles.tryAgain}
@@ -215,7 +183,7 @@ export function ScannerResults() {
 
         {analysis ? <AnalysisCard analysis={analysis} /> : null}
 
-        {isLoading || isError || recoveredEmbeddingQuery.isLoading || (method === 'text' && !value) || (method === 'embedding' && !embedding) || failed === '1' ? (
+        {isLoading || isError || (method === 'text' && !value) || failed === '1' ? (
           <View style={styles.bodyWrap}>{renderState()}</View>
         ) : results.length > 0 ? (
           <>
@@ -310,23 +278,6 @@ function MatchChoiceModal({
   );
 }
 
-async function scanEmbeddingWithFallback(
-  embedding: number[],
-  analysis: CoverAnalysis | null,
-  analysisQuery?: string
-): Promise<ScanResponse> {
-  try {
-    // Visual similarity remains the primary signal. Qwen metadata is used to
-    // narrow/fallback the catalog search, never to replace the image match.
-    const visual = await matchEmbedding(embedding, analysis?.console);
-    if (visual.matches.length > 0 || !analysisQuery) return visual;
-    const text = await scanText(analysisQuery, analysis?.console);
-    return text.matches.length > 0 ? { ...text, match_source: 'catalog' } : { ...visual, match_source: 'visual' };
-  } catch (error) {
-    if (!analysisQuery) throw error;
-    return { ...(await scanText(analysisQuery, analysis?.console)), match_source: 'catalog' };
-  }
-}
 
 function parseAnalysis(value?: string | string[]): CoverAnalysis | null {
   if (!value || Array.isArray(value)) return null;
@@ -338,18 +289,6 @@ function parseAnalysis(value?: string | string[]): CoverAnalysis | null {
       edition: parsed.edition || '', publisher: parsed.publisher || '', query: parsed.query || parsed.title,
     };
   } catch { return null; }
-}
-
-function parseEmbedding(value?: string | string[]): number[] | undefined {
-  if (!value || Array.isArray(value)) return undefined;
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) && parsed.every((item) => typeof item === 'number')
-      ? parsed
-      : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function normalizePhotoUri(value?: string): string | undefined {

@@ -11,8 +11,8 @@ import (
 	"github.com/YoukaiYoru/api/internal/auth"
 	"github.com/YoukaiYoru/api/internal/collections"
 	"github.com/YoukaiYoru/api/internal/config"
-	"github.com/YoukaiYoru/api/internal/embeddings"
 	"github.com/YoukaiYoru/api/internal/games"
+	"github.com/YoukaiYoru/api/internal/gemini"
 	"github.com/YoukaiYoru/api/internal/media"
 	"github.com/YoukaiYoru/api/internal/models"
 	"github.com/YoukaiYoru/api/internal/observability"
@@ -22,7 +22,6 @@ import (
 	"github.com/YoukaiYoru/api/internal/screenscraper"
 	"github.com/YoukaiYoru/api/internal/social"
 	"github.com/YoukaiYoru/api/internal/users"
-	"github.com/YoukaiYoru/api/internal/vector"
 	"github.com/YoukaiYoru/api/pkg/database"
 	"github.com/YoukaiYoru/api/pkg/middleware"
 	"github.com/gofiber/fiber/v3"
@@ -47,14 +46,11 @@ func main() {
 	if cfg.Environment == "production" && cfg.DBSSLMode == "disable" {
 		log.Fatal("DB_SSLMODE must enable TLS in production")
 	}
-	if cfg.Environment == "production" && (cfg.TLSCertFile == "" || cfg.TLSKeyFile == "") {
+	if cfg.Environment == "production" && !cfg.TLSTerminated && (cfg.TLSCertFile == "" || cfg.TLSKeyFile == "") {
 		log.Fatal("TLS_CERT_FILE and TLS_KEY_FILE must be configured in production")
 	}
 	if cfg.Environment == "production" && strings.TrimSpace(cfg.CORSOrigins) == "*" {
 		log.Fatal("CORS_ORIGINS must be explicit in production")
-	}
-	if cfg.Environment == "production" && (cfg.EmbeddingsURL == "" || strings.Contains(cfg.EmbeddingsURL, "localhost")) {
-		log.Fatal("EMBEDDINGS_URL must point to the private AI service in production")
 	}
 	db := database.Connect(cfg)
 	metrics := observability.NewRecorder(db)
@@ -160,41 +156,31 @@ func main() {
 	ssHandler := screenscraper.NewHandler(ssService)
 	screenscraper.Routes(api, ssHandler, cfg.JWTSecret)
 
-	// Scanner
-	vectorSvc := vector.NewService(vector.Options{
-		Host:    cfg.QdrantHost,
-		Port:    cfg.QdrantPort,
-		APIKey:  cfg.QdrantAPIKey,
-		UseTLS:  cfg.QdrantUseTLS,
-		Metrics: metrics,
-	})
-	if !vectorSvc.Healthy(context.Background()) {
-		log.Printf("WARN: Qdrant unreachable (%s:%d); visual matching (/scanner/match) will be unavailable", cfg.QdrantHost, cfg.QdrantPort)
-	} else if err := vectorSvc.EnsureCollection(context.Background(), vector.DefaultDims); err != nil {
-		log.Printf("WARN: Qdrant collection setup failed: %v", err)
+	// Scanner uses Gemini for image metadata, then ScreenScraper for catalog search.
+	geminiClient := gemini.New(cfg.GeminiAPIKey, cfg.GeminiModel, cfg.GeminiTimeout)
+	if !geminiClient.Configured() {
+		log.Printf("WARN: GEMINI_API_KEY is not configured; photo scanning is unavailable")
 	}
 	app.Get("/health/ready", func(c fiber.Ctx) error {
 		sqlDB, err := db.DB()
 		if err != nil || sqlDB.PingContext(c.Context()) != nil {
 			return fiber.NewError(fiber.StatusServiceUnavailable, "database not ready")
 		}
-		vectorReady := vectorSvc.Healthy(c.Context())
 		status := "ready"
-		if !vectorReady {
+		if !geminiClient.Configured() {
 			status = "degraded"
 		}
 		return c.JSON(fiber.Map{
 			"status": status,
 			"dependencies": fiber.Map{
 				"database": "ready",
-				"vector":   map[bool]string{true: "ready", false: "degraded"}[vectorReady],
+				"gemini":   map[bool]string{true: "ready", false: "degraded"}[geminiClient.Configured()],
 			},
 		})
 	})
-	scannerService := scanner.NewService(gamesRepo, vectorSvc, ssService)
-	scannerHandler := scanner.NewHandler(scannerService, metrics)
+	scannerService := scanner.NewService(gamesRepo, ssService)
+	scannerHandler := scanner.NewHandler(scannerService, geminiClient, metrics)
 	scanner.Routes(api, scannerHandler, cfg.JWTSecret)
-	embeddings.Routes(api, embeddings.NewProxy(cfg.EmbeddingsURL, metrics), cfg.JWTSecret)
 
 	media.Routes(api, mediaSvc)
 

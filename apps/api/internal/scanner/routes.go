@@ -11,10 +11,8 @@ import (
 func Routes(app fiber.Router, handler *Handler, jwtSecret string) {
 	scanner := app.Group("/scanner")
 
-	scanner.Post("/barcode", middleware.JWTAuth(jwtSecret), limiter.New(scanLimit(30)), handler.Barcode)
 	scanner.Post("/text", middleware.JWTAuth(jwtSecret), limiter.New(scanLimit(30)), handler.Text)
-	scanner.Post("/match", middleware.JWTAuth(jwtSecret), limiter.New(scanLimit(20)), handler.Match)
-	scanner.Get("/stats", middleware.JWTAuth(jwtSecret), handler.Stats)
+	scanner.Post("/analyze", middleware.JWTAuth(jwtSecret), limiter.New(scanLimit(5)), handler.AnalyzeCover)
 }
 
 func scanLimit(max int) limiter.Config {

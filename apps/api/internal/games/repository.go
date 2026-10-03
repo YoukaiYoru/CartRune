@@ -161,21 +161,6 @@ func (r *Repository) GetPrimaryCovers(gameIDs []uuid.UUID) (map[uuid.UUID]models
 	return byGame, nil
 }
 
-func (r *Repository) FindByBarcode(ctx context.Context, barcode string) ([]models.Game, error) {
-	// Search in releases or a future barcode field
-	var games []models.Game
-	err := r.db.WithContext(ctx).
-		Joins("JOIN releases ON releases.game_id = games.id").
-		Where("releases.barcode = ?", barcode).
-		Preload("Platforms").
-		Preload("Releases", "barcode = ?", barcode).
-		Preload("Releases.Platform").
-		Preload("Covers").
-		Distinct().
-		Find(&games).Error
-	return games, err
-}
-
 func (r *Repository) FindByText(ctx context.Context, query, platformHint string) ([]models.Game, error) {
 	var games []models.Game
 	lines := make([]string, 0, 5)
