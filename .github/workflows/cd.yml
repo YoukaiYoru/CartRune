@@ -77,7 +77,6 @@ jobs:
           host: ${{ secrets.AZURE_VM_HOST }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
-          script_stop: true
           script: |
             set -eu
             sudo install -d -m 0750 -o "$(id -un)" -g "$(id -gn)" /opt/cartrune
@@ -103,7 +102,6 @@ jobs:
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
           envs: API_IMAGE,GHCR_TOKEN,GHCR_USER,CARTRUNE_ENV_API,CARTRUNE_DOMAIN
-          script_stop: true
           script: |
             set -eu
             cd /opt/cartrune
@@ -113,7 +111,11 @@ jobs:
             printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --password-stdin
             export API_IMAGE CARTRUNE_DOMAIN
             docker compose -f compose.production.yml pull
-            docker compose -f compose.production.yml up -d --remove-orphans
+            if ! docker compose -f compose.production.yml up -d --remove-orphans; then
+              docker compose -f compose.production.yml ps
+              docker compose -f compose.production.yml logs --tail=100 api caddy
+              exit 1
+            fi
             docker compose -f compose.production.yml ps
             for attempt in 1 2 3 4 5 6; do
               if curl --fail --silent "https://${CARTRUNE_DOMAIN}/health/live" >/dev/null; then exit 0; fi
