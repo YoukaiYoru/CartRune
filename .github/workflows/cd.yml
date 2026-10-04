@@ -108,6 +108,9 @@ jobs:
             test -n "$CARTRUNE_ENV_API"
             umask 077
             printf '%s\n' "$CARTRUNE_ENV_API" > .env.api
+            jwt_length="$(awk -F= '$1 == "JWT_SECRET" {print length($2); exit}' .env.api)"
+            test "${jwt_length:-0}" -ge 32
+            grep -Eq '^CORS_ORIGINS=https?://' .env.api
             printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --password-stdin
             export API_IMAGE CARTRUNE_DOMAIN
             docker compose -f compose.production.yml pull
