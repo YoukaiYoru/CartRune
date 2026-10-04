@@ -1,0 +1,10 @@
+resource_group_name    = "cartrune-rg-chile"
+location               = "chilecentral"
+vm_name                = "cartrune-vm"
+vm_size                = "Standard_B2ats_v2"
+admin_username         = "cartrune"
+admin_ssh_public_key   = "ssh-ed25519 AAAA..."
+admin_source_cidr      = "203.0.113.10/32"
+os_disk_size_gb        = 30
+domain                 = "api-cartrune.duckdns.org"
+environment            = "production"

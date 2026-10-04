@@ -1,8 +1,8 @@
 # ScreenScraper WebAPI v2 — Referencia (ES)
 
 Notas de integración de ScreenScraper en la API de CartRune. Documento de
-referencia sobre la API v2; para la implementación concreta ver
-`game_library_architecture.md` y el código en `apps/api/internal/screenscraper`.
+ referencia sobre la API v2; para la implementación concreta ver el código en
+`apps/api/internal/screenscraper`.
 
 ---
 

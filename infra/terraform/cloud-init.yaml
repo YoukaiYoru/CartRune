@@ -1,0 +1,18 @@
+#cloud-config
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+  - docker.io
+  - docker-compose-v2
+
+users:
+  - name: ${admin_username}
+    groups: [docker]
+    shell: /bin/bash
+    lock_passwd: true
+
+runcmd:
+  - systemctl enable --now docker
+  - install -d -o ${admin_username} -g ${admin_username} /opt/cartrune
+  - install -d -o ${admin_username} -g ${admin_username} /var/lib/cartrune

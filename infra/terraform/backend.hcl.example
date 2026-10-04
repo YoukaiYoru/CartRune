@@ -1,0 +1,6 @@
+resource_group_name  = "cartrune-tfstate-rg"
+storage_account_name = "REEMPLAZAR_CON_NOMBRE_UNICO"
+container_name       = "tfstate"
+key                  = "cartrune.production.tfstate"
+use_cli               = true
+use_azuread_auth      = true
