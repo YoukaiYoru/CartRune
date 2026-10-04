@@ -71,6 +71,16 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare VM deployment directory
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -eu
+            sudo install -d -m 0750 -o "$(id -un)" -g "$(id -gn)" /opt/cartrune
       - name: Copy production files
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -86,17 +96,20 @@ jobs:
           API_IMAGE: ${{ needs.publish.outputs.image }}
           GHCR_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN }}
           GHCR_USER: ${{ secrets.GHCR_DEPLOY_USER }}
+          CARTRUNE_ENV_API: ${{ secrets.CARTRUNE_ENV_API }}
           CARTRUNE_DOMAIN: api-cartrune.duckdns.org
         with:
           host: ${{ secrets.AZURE_VM_HOST }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
-          envs: API_IMAGE,GHCR_TOKEN,GHCR_USER,CARTRUNE_DOMAIN
+          envs: API_IMAGE,GHCR_TOKEN,GHCR_USER,CARTRUNE_ENV_API,CARTRUNE_DOMAIN
           script_stop: true
           script: |
             set -eu
             cd /opt/cartrune
-            test -f .env.api
+            test -n "$CARTRUNE_ENV_API"
+            umask 077
+            printf '%s\n' "$CARTRUNE_ENV_API" > .env.api
             printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --password-stdin
             export API_IMAGE CARTRUNE_DOMAIN
             docker compose -f compose.production.yml pull
