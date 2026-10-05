@@ -21,6 +21,7 @@ export function Login() {
   const login = useAuthStore((s) => s.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -71,17 +72,26 @@ export function Login() {
         />
 
         <Text style={styles.label}>PASSWORD</Text>
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••••"
-          placeholderTextColor={theme.text.muted}
-          secureTextEntry
-          autoComplete="current-password"
-          textContentType="password"
-          maxLength={128}
-        />
+        <View style={styles.passwordWrap}>
+          <TextInput
+            style={styles.passwordInput}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            placeholderTextColor={theme.text.muted}
+            secureTextEntry={!showPassword}
+            autoComplete="current-password"
+            textContentType="password"
+            maxLength={128}
+          />
+          <Pressable onPress={() => setShowPassword((value) => !value)} accessibilityRole="button" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} style={styles.eyeButton}>
+            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={21} color={theme.text.muted} />
+          </Pressable>
+        </View>
+
+        <Pressable style={styles.forgotLink} onPress={() => router.push('/forgot-password')} accessibilityRole="button">
+          <Text style={styles.linkAccent}>Forgot password?</Text>
+        </Pressable>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -135,6 +145,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 18,
   },
+  passwordWrap: { position: 'relative', marginBottom: 4 },
+  passwordInput: {
+    backgroundColor: theme.bg.input,
+    borderWidth: 1,
+    borderColor: theme.border.subtle,
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: 14,
+    paddingRight: 48,
+    paddingVertical: 12,
+    color: theme.text.primary,
+    fontSize: 15,
+    marginBottom: 14,
+  },
+  eyeButton: { position: 'absolute', right: 12, top: 0, bottom: 14, justifyContent: 'center', paddingHorizontal: 4 },
+  forgotLink: { alignSelf: 'flex-end', marginBottom: 14 },
   error: { color: '#e0706a', fontSize: 13, marginBottom: 12 },
   button: {
     backgroundColor: theme.accent.primary,

@@ -16,6 +16,8 @@ func Routes(app fiber.Router, handler *Handler, jwtSecret string) {
 	auth.Post("/login", limiter.New(authLimit(10)), handler.Login)
 	auth.Post("/refresh", limiter.New(authLimit(20)), handler.Refresh)
 	auth.Post("/logout", handler.Logout)
+	auth.Post("/password-reset/request", limiter.New(authLimit(5)), handler.RequestPasswordReset)
+	auth.Post("/password-reset/confirm", limiter.New(authLimit(10)), handler.ConfirmPasswordReset)
 
 	// Protected route
 	app.Get("/me", middleware.JWTAuth(jwtSecret), handler.Me)

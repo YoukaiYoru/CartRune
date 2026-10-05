@@ -72,6 +72,7 @@ func main() {
 	if err := db.AutoMigrate(
 		&models.User{},
 		&models.RefreshToken{},
+		&models.PasswordResetToken{},
 		&models.Game{},
 		&models.Platform{},
 		&models.GamePlatform{},

@@ -28,6 +28,15 @@ type RefreshToken struct {
 	CreatedAt time.Time  `json:"-"`
 }
 
+type PasswordResetToken struct {
+	ID        uuid.UUID  `gorm:"type:uuid;primaryKey" json:"-"`
+	UserID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"-"`
+	TokenHash string     `gorm:"size:64;uniqueIndex;not null" json:"-"`
+	ExpiresAt time.Time  `gorm:"index;not null" json:"-"`
+	UsedAt    *time.Time `gorm:"index" json:"-"`
+	CreatedAt time.Time  `json:"-"`
+}
+
 type Game struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primaryKey" json:"id"`
 	Title       string         `gorm:"size:255;not null" json:"title"`

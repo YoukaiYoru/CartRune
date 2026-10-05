@@ -1,12 +1,18 @@
 package auth
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -109,6 +115,82 @@ func (s *Service) Logout(refreshToken string) error {
 		return nil
 	}
 	return s.repo.RevokeRefreshToken(hashToken(refreshToken))
+}
+
+func (s *Service) RequestPasswordReset(email string) {
+	email = strings.ToLower(strings.TrimSpace(email))
+	user, err := s.repo.FindByEmail(email)
+	if err != nil {
+		// Deliberately do not reveal whether the address exists.
+		return
+	}
+
+	rawTokenBytes := make([]byte, 32)
+	if _, err := rand.Read(rawTokenBytes); err != nil {
+		log.Printf("password reset token generation failed: %v", err)
+		return
+	}
+	rawToken := base64.RawURLEncoding.EncodeToString(rawTokenBytes)
+	if err := s.repo.CreatePasswordResetToken(&models.PasswordResetToken{
+		ID: uuid.New(), UserID: user.ID, TokenHash: hashToken(rawToken),
+		ExpiresAt: time.Now().Add(s.cfg.PasswordResetTTL),
+	}); err != nil {
+		log.Printf("password reset token persistence failed: %v", err)
+		return
+	}
+
+	resetURL, err := url.Parse(s.cfg.PasswordResetURL)
+	if err != nil {
+		log.Printf("invalid PASSWORD_RESET_URL: %v", err)
+		return
+	}
+	query := resetURL.Query()
+	query.Set("token", rawToken)
+	resetURL.RawQuery = query.Encode()
+	if err := s.sendPasswordResetEmail(user.Email, resetURL.String()); err != nil {
+		log.Printf("password reset email failed: %v", err)
+	}
+}
+
+func (s *Service) ConfirmPasswordReset(token, password string) error {
+	if strings.TrimSpace(token) == "" {
+		return errors.New("invalid or expired reset token")
+	}
+	if err := validatePassword(password); err != nil {
+		return err
+	}
+	return s.repo.ResetPassword(hashToken(token), hashPassword(password))
+}
+
+func (s *Service) sendPasswordResetEmail(recipient, resetURL string) error {
+	if s.cfg.ResendAPIKey == "" || s.cfg.MailFrom == "" {
+		return errors.New("RESEND_API_KEY and MAIL_FROM must be configured")
+	}
+	payload, err := json.Marshal(map[string]interface{}{
+		"from":    s.cfg.MailFrom,
+		"to":      []string{recipient},
+		"subject": "Reset your CartRune password",
+		"html":    fmt.Sprintf("<p>We received a request to reset your CartRune password.</p><p><a href=\"%s\">Reset password</a></p><p>This link expires in %d minutes and can only be used once.</p>", resetURL, int(s.cfg.PasswordResetTTL.Minutes())),
+	})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest(http.MethodPost, "https://api.resend.com/emails", bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.cfg.ResendAPIKey)
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("resend returned status %s", resp.Status)
+	}
+	return nil
 }
 
 func (s *Service) GetCurrentUser(userID uuid.UUID) (*models.User, error) {

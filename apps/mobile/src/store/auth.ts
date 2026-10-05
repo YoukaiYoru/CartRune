@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import axios from 'axios';
 import { tokenStorage } from '@/services/auth';
 import { api } from '@/services/api';
-import { loginSchema, registerPayloadSchema } from '@/lib/auth-validation';
+import { loginSchema, registerPayloadSchema, passwordResetRequestSchema, passwordResetConfirmSchema } from '@/lib/auth-validation';
 
 interface User {
   id: string;
@@ -22,6 +22,8 @@ interface AuthState {
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   setTokens: (access: string, refresh: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  confirmPasswordReset: (token: string, password: string, confirm: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => {
@@ -96,6 +98,16 @@ export const useAuthStore = create<AuthState>((set) => {
     setTokens: async (access, refresh) => {
       await tokenStorage.setTokens(access, refresh);
       set({ isAuthenticated: true });
+    },
+
+    requestPasswordReset: async (email) => {
+      const payload = passwordResetRequestSchema.parse({ email });
+      await api.post('/auth/password-reset/request', payload);
+    },
+
+    confirmPasswordReset: async (token, password, confirm) => {
+      const payload = passwordResetConfirmSchema.parse({ password, confirm });
+      await api.post('/auth/password-reset/confirm', { token, password: payload.password });
     },
   };
 });

@@ -52,6 +52,8 @@ export default function RootLayout() {
         <Stack.Protected guard={!isAuthenticated}>
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
+          <Stack.Screen name="forgot-password" />
+          <Stack.Screen name="reset-password" />
         </Stack.Protected>
       </Stack>
     </QueryClientProvider>

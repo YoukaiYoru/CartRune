@@ -87,3 +87,36 @@ func (r *Repository) RevokeRefreshToken(hash string) error {
 		Where("token_hash = ? AND revoked_at IS NULL", hash).
 		Update("revoked_at", &now).Error
 }
+
+func (r *Repository) CreatePasswordResetToken(token *models.PasswordResetToken) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		if err := tx.Model(&models.PasswordResetToken{}).
+			Where("user_id = ? AND used_at IS NULL AND expires_at > ?", token.UserID, now).
+			Update("used_at", &now).Error; err != nil {
+			return err
+		}
+		return tx.Create(token).Error
+	})
+}
+
+func (r *Repository) ResetPassword(tokenHash, passwordHash string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var token models.PasswordResetToken
+		if err := tx.Set("gorm:query_option", "FOR UPDATE").
+			Where("token_hash = ? AND used_at IS NULL AND expires_at > ?", tokenHash, time.Now()).
+			First(&token).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.User{}).Where("id = ?", token.UserID).Update("password_hash", passwordHash).Error; err != nil {
+			return err
+		}
+		now := time.Now()
+		if err := tx.Model(&token).Update("used_at", &now).Error; err != nil {
+			return err
+		}
+		return tx.Model(&models.RefreshToken{}).
+			Where("user_id = ? AND revoked_at IS NULL", token.UserID).
+			Update("revoked_at", &now).Error
+	})
+}

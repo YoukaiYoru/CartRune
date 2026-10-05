@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth';
 import { theme } from '@/theme';
 import { registerSchema, safeAuthMessage } from '@/lib/auth-validation';
+import { Ionicons } from '@expo/vector-icons';
 
 export function Register() {
   const router = useRouter();
@@ -22,6 +23,8 @@ export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,7 +48,8 @@ export function Register() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
@@ -84,30 +88,43 @@ export function Register() {
           />
 
           <Text style={styles.label}>PASSWORD</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••••"
-            placeholderTextColor={theme.text.muted}
-            secureTextEntry
-            autoComplete="new-password"
-            textContentType="newPassword"
-            maxLength={128}
-          />
+          <View style={styles.passwordWrap}>
+            <TextInput
+              style={styles.passwordInput}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              placeholderTextColor={theme.text.muted}
+              secureTextEntry={!showPassword}
+              autoComplete="new-password"
+              textContentType="newPassword"
+              maxLength={128}
+              returnKeyType="next"
+            />
+            <Pressable onPress={() => setShowPassword((value) => !value)} accessibilityRole="button" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} style={styles.eyeButton}>
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={21} color={theme.text.muted} />
+            </Pressable>
+          </View>
 
           <Text style={styles.label}>CONFIRM PASSWORD</Text>
-          <TextInput
-            style={styles.input}
-            value={confirm}
-            onChangeText={setConfirm}
-            placeholder="••••••••"
-            placeholderTextColor={theme.text.muted}
-            secureTextEntry
-            autoComplete="new-password"
-            textContentType="newPassword"
-            maxLength={128}
-          />
+          <View style={styles.passwordWrap}>
+            <TextInput
+              style={styles.passwordInput}
+              value={confirm}
+              onChangeText={setConfirm}
+              placeholder="••••••••"
+              placeholderTextColor={theme.text.muted}
+              secureTextEntry={!showConfirm}
+              autoComplete="new-password"
+              textContentType="newPassword"
+              maxLength={128}
+              returnKeyType="done"
+              onSubmitEditing={handleRegister}
+            />
+            <Pressable onPress={() => setShowConfirm((value) => !value)} accessibilityRole="button" accessibilityLabel={showConfirm ? 'Hide password confirmation' : 'Show password confirmation'} style={styles.eyeButton}>
+              <Ionicons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={21} color={theme.text.muted} />
+            </Pressable>
+          </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -165,6 +182,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 16,
   },
+  passwordWrap: { position: 'relative', marginBottom: 0 },
+  passwordInput: {
+    backgroundColor: theme.bg.input,
+    borderWidth: 1,
+    borderColor: theme.border.subtle,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingRight: 48,
+    paddingVertical: 12,
+    color: theme.text.primary,
+    fontSize: 15,
+    marginBottom: 16,
+  },
+  eyeButton: { position: 'absolute', right: 12, top: 0, bottom: 16, justifyContent: 'center', paddingHorizontal: 4 },
   error: { color: '#e0706a', fontSize: 13, marginBottom: 12 },
   button: {
     backgroundColor: theme.accent.primary,

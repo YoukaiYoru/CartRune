@@ -43,3 +43,10 @@ func validPassword(password string) bool {
 	runes := utf8.RuneCountInString(password)
 	return runes >= minPasswordRunes && runes <= maxPasswordRunes
 }
+
+func validatePassword(password string) error {
+	if !validPassword(password) {
+		return errors.New("password must be between 12 and 128 characters")
+	}
+	return nil
+}

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/YoukaiYoru/api/pkg/middleware"
 	"github.com/YoukaiYoru/api/pkg/response"
@@ -96,6 +97,31 @@ func (h *Handler) Logout(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusInternalServerError, "failed to logout")
 	}
 	return response.NoContent(c)
+}
+
+func (h *Handler) RequestPasswordReset(c fiber.Ctx) error {
+	noStore(c)
+	var req PasswordResetRequest
+	if err := c.Bind().Body(&req); err != nil || strings.TrimSpace(req.Email) == "" {
+		return response.Error(c, fiber.StatusBadRequest, "email is required")
+	}
+	h.service.RequestPasswordReset(req.Email)
+	return response.Success(c, fiber.Map{"message": "If an account exists for that email, a reset link has been sent."})
+}
+
+func (h *Handler) ConfirmPasswordReset(c fiber.Ctx) error {
+	noStore(c)
+	var req PasswordResetConfirmRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if err := h.service.ConfirmPasswordReset(req.Token, req.Password); err != nil {
+		if strings.HasPrefix(err.Error(), "password must be") {
+			return response.Error(c, fiber.StatusBadRequest, "invalid password")
+		}
+		return response.Error(c, fiber.StatusBadRequest, "invalid or expired reset token")
+	}
+	return response.Success(c, fiber.Map{"message": "password updated"})
 }
 
 func noStore(c fiber.Ctx) {

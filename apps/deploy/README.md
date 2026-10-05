@@ -32,6 +32,10 @@ Required GitHub Environment `production` secrets:
 - `GHCR_DEPLOY_TOKEN`
 - `CARTRUNE_ENV_API` with the complete production `.env.api` content.
 
+Password recovery also requires `RESEND_API_KEY` and a verified `MAIL_FROM` in
+`CARTRUNE_ENV_API`. The reset link opens the mobile app through the
+`cartrune://reset-password` scheme.
+
 Every push to `master` that changes the API, deployment files or workflow runs tests, publishes the image to GHCR, copies Caddy/Compose, writes `.env.api`, and restarts the services. There is no need to enter the VM manually.
 
 Manual fallback:

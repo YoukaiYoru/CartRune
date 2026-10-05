@@ -32,6 +32,17 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+export const passwordResetRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().max(254).email('Enter a valid email'),
+});
+
+export const passwordResetConfirmSchema = z
+  .object({ password: passwordSchema, confirm: z.string() })
+  .refine((value) => value.password === value.confirm, {
+    message: 'Passwords do not match',
+    path: ['confirm'],
+  });
+
 export function safeAuthMessage(error: unknown, fallback: string): string {
   const response = (error as { response?: { status?: number; data?: { error?: unknown } } })?.response;
   const message = response?.data?.error;
