@@ -2,6 +2,7 @@ package collections
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/YoukaiYoru/api/internal/media"
 	"github.com/YoukaiYoru/api/internal/models"
@@ -52,7 +53,9 @@ func (h *Handler) CreateLibrary(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
 
-	if req.Name == "" {
+	req.Name = strings.TrimSpace(req.Name)
+	req.Description = strings.TrimSpace(req.Description)
+	if req.Name == "" || len([]rune(req.Name)) > 100 || len([]rune(req.Description)) > 500 {
 		return response.Error(c, fiber.StatusBadRequest, "name is required")
 	}
 
@@ -72,12 +75,13 @@ func (h *Handler) CreateLibrary(c fiber.Ctx) error {
 }
 
 func (h *Handler) GetLibrary(c fiber.Ctx) error {
+	userID := middleware.GetUserID(c)
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "invalid library id")
 	}
 
-	lib, err := h.service.GetLibrary(id)
+	lib, err := h.service.GetLibrary(id, userID)
 	if err != nil {
 		if err.Error() == "library not found" {
 			return response.Error(c, fiber.StatusNotFound, err.Error())
@@ -147,6 +151,11 @@ func (h *Handler) UpdateLibrary(c fiber.Ctx) error {
 	var req UpdateLibraryRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	req.Name = strings.TrimSpace(req.Name)
+	req.Description = strings.TrimSpace(req.Description)
+	if len([]rune(req.Name)) > 100 || len([]rune(req.Description)) > 500 {
+		return response.Error(c, fiber.StatusBadRequest, "library fields are too long")
 	}
 
 	lib, err := h.service.UpdateLibrary(id, userID, req)

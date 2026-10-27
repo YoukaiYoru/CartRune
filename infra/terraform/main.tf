@@ -102,6 +102,9 @@ resource "azurerm_linux_virtual_machine" "cartrune" {
   network_interface_ids           = [azurerm_network_interface.cartrune.id]
   custom_data                     = base64encode(templatefile("${path.module}/cloud-init.yaml", { admin_username = var.admin_username }))
 
+  boot_diagnostics {
+  }
+
   admin_ssh_key {
     username   = var.admin_username
     public_key = var.admin_ssh_public_key

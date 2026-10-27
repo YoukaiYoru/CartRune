@@ -1,5 +1,5 @@
 output "public_ip_address" {
-  description = "IP pública estática para api-cartrune.duckdns.org."
+  description = "IP pública estática para api.cartune.tech."
   value       = azurerm_public_ip.cartrune.ip_address
 }
 

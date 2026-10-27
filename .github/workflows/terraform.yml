@@ -51,6 +51,12 @@ jobs:
       - name: Terraform plan
         working-directory: infra/terraform
         run: terraform plan -no-color -out=tfplan
+      - name: Upload Terraform plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: cartrune-terraform-plan-${{ github.sha }}
+          path: infra/terraform/tfplan
+          retention-days: 1
 
   apply:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -76,6 +82,11 @@ jobs:
       - name: Terraform init
         working-directory: infra/terraform
         run: terraform init -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" -backend-config="container_name=tfstate" -backend-config="key=cartrune.production.tfstate" -backend-config="use_azuread_auth=true"
+      - name: Download reviewed Terraform plan
+        uses: actions/download-artifact@v4
+        with:
+          name: cartrune-terraform-plan-${{ github.sha }}
+          path: infra/terraform
       - name: Terraform apply
         working-directory: infra/terraform
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan

@@ -29,6 +29,22 @@ func (r *Repository) FindByID(id uuid.UUID) (*models.Library, error) {
 	return &lib, nil
 }
 
+func (r *Repository) FindByOwnerID(id, userID uuid.UUID) (*models.Library, error) {
+	var lib models.Library
+	err := r.db.
+		Preload("Games").
+		Preload("Games.Game").
+		Preload("Games.Game.Covers").
+		Preload("Games.Release").
+		Preload("Games.Release.Platform").
+		Where("id = ? AND user_id = ?", id, userID).
+		First(&lib).Error
+	if err != nil {
+		return nil, err
+	}
+	return &lib, nil
+}
+
 func (r *Repository) FindPublicByID(id uuid.UUID) (*models.Library, error) {
 	var lib models.Library
 	err := r.db.

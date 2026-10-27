@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -28,3 +31,9 @@ jobs:
       - name: Mobile typecheck
         working-directory: apps/mobile
         run: npm ci && npm run typecheck
+
+      - name: Validate production compose
+        run: |
+          touch apps/deploy/.env.api
+          docker compose -f apps/deploy/compose.production.yml config
+          rm -f apps/deploy/.env.api

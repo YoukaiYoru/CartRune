@@ -100,6 +100,11 @@ func (r *Repository) CreatePasswordResetToken(token *models.PasswordResetToken) 
 	})
 }
 
+func (r *Repository) DeletePasswordResetToken(hash string) error {
+	return r.db.Where("token_hash = ? AND used_at IS NULL", hash).
+		Delete(&models.PasswordResetToken{}).Error
+}
+
 func (r *Repository) ResetPassword(tokenHash, passwordHash string) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		var token models.PasswordResetToken

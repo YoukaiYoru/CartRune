@@ -11,6 +11,6 @@ Documento de referencia de requisitos y decisiones iniciales. No contiene secret
 - Sin barcode, Qdrant, Ollama, MobileCLIP ni servicio separado de embeddings.
 - Azure: resource group `cartrune-rg-chile`, región `chilecentral`.
 - VM: `Standard_B2ats_v2`, disco de 30 GB.
-- Dominio: `api-cartrune.duckdns.org`.
+- Dominio API: `api.cartune.tech`.
 - Producción en la rama `master`.
 - Puede existir una caída breve durante el despliegue.

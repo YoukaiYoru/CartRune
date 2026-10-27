@@ -46,10 +46,13 @@ func (s *Service) Register(req RegisterRequest) (*TokenResponse, error) {
 	}
 
 	user := &models.User{
-		ID:           uuid.New(),
-		Username:     req.Username,
-		Email:        req.Email,
-		PasswordHash: hashPassword(req.Password),
+		ID:       uuid.New(),
+		Username: req.Username,
+		Email:    req.Email,
+	}
+	user.PasswordHash, err = hashPassword(req.Password)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := s.repo.CreateWithDefaultLibrary(user); err != nil {
@@ -149,6 +152,7 @@ func (s *Service) RequestPasswordReset(email string) {
 	resetURL.RawQuery = query.Encode()
 	if err := s.sendPasswordResetEmail(user.Email, resetURL.String()); err != nil {
 		log.Printf("password reset email failed: %v", err)
+		_ = s.repo.DeletePasswordResetToken(hashToken(rawToken))
 	}
 }
 
@@ -159,7 +163,11 @@ func (s *Service) ConfirmPasswordReset(token, password string) error {
 	if err := validatePassword(password); err != nil {
 		return err
 	}
-	return s.repo.ResetPassword(hashToken(token), hashPassword(password))
+	passwordHash, err := hashPassword(password)
+	if err != nil {
+		return err
+	}
+	return s.repo.ResetPassword(hashToken(token), passwordHash)
 }
 
 func (s *Service) sendPasswordResetEmail(recipient, resetURL string) error {
@@ -262,16 +270,16 @@ const (
 	argonLen  = 32
 )
 
-func hashPassword(password string) string {
+func hashPassword(password string) (string, error) {
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {
-		panic("unable to generate password salt")
+		return "", fmt.Errorf("unable to generate password salt: %w", err)
 	}
 	hash := argon2.IDKey([]byte(password), salt, argonTime, argonMem, argonThr, argonLen)
 	// Encode the raw binary hash as base64 so it is valid UTF-8 for the database.
 	encoded := base64.RawStdEncoding.EncodeToString(hash)
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
-	return "$argon2id$v=19$m=65536,t=1,p=4$" + encodedSalt + "$" + encoded
+	return "$argon2id$v=19$m=65536,t=1,p=4$" + encodedSalt + "$" + encoded, nil
 }
 
 func verifyPassword(password, storedHash string) bool {

@@ -156,10 +156,14 @@ func (c *Client) get(ctx context.Context, endpoint string, q url.Values, out int
 			lastErr = err
 			continue
 		}
-		body, err := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(io.LimitReader(resp.Body, 4*1024*1024+1))
 		resp.Body.Close()
 		if err != nil {
 			lastErr = err
+			continue
+		}
+		if len(body) > 4*1024*1024 {
+			lastErr = fmt.Errorf("ScreenScraper response too large")
 			continue
 		}
 		lastStatus = resp.StatusCode

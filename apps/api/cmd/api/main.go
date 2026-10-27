@@ -1,12 +1,14 @@
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/YoukaiYoru/api/internal/auth"
 	"github.com/YoukaiYoru/api/internal/collections"
@@ -14,7 +16,6 @@ import (
 	"github.com/YoukaiYoru/api/internal/games"
 	"github.com/YoukaiYoru/api/internal/gemini"
 	"github.com/YoukaiYoru/api/internal/media"
-	"github.com/YoukaiYoru/api/internal/models"
 	"github.com/YoukaiYoru/api/internal/observability"
 	"github.com/YoukaiYoru/api/internal/progress"
 	"github.com/YoukaiYoru/api/internal/reviews"
@@ -25,9 +26,11 @@ import (
 	"github.com/YoukaiYoru/api/pkg/database"
 	"github.com/YoukaiYoru/api/pkg/middleware"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/recover"
+	"github.com/gofiber/fiber/v3/middleware/requestid"
+	"github.com/gofiber/fiber/v3/middleware/timeout"
 	"github.com/joho/godotenv"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -69,52 +72,35 @@ func main() {
 		DB:           db,
 	})
 
-	if err := db.AutoMigrate(
-		&models.User{},
-		&models.RefreshToken{},
-		&models.PasswordResetToken{},
-		&models.Game{},
-		&models.Platform{},
-		&models.GamePlatform{},
-		&models.Release{},
-		&models.Cover{},
-		&models.Library{},
-		&models.LibraryGame{},
-		&models.Review{},
-		&models.ReviewLike{},
-		&models.Comment{},
-		&models.Follow{},
-		&models.Activity{},
-		&models.ScanMetric{},
-		&models.DependencyMetric{},
-		&models.RateLimitBucket{},
-	); err != nil {
-		log.Fatalf("failed to migrate database: %v", err)
-	}
-	if err := ensureLibraryGameKey(db); err != nil {
-		log.Fatalf("failed to migrate library games key: %v", err)
-	}
-	if err := ensureCoverReleaseKeys(db); err != nil {
-		log.Fatalf("failed to migrate cover release keys: %v", err)
-	}
-
-	// Strip ScreenScraper credentials from covers persisted before the media
-	// proxy existed (they are re-attached server-side at fetch time).
-	if err := mediaSvc.CleanupStoredURLs(context.Background()); err != nil {
-		log.Printf("WARN: failed to clean stored cover urls: %v", err)
-	}
-
 	app := fiber.New(fiber.Config{
-		AppName:      "CartRune API",
-		BodyLimit:    8 * 1024 * 1024,
+		AppName:     "CartRune API",
+		BodyLimit:   8 * 1024 * 1024,
+		TrustProxy:  true,
+		ProxyHeader: fiber.HeaderXForwardedFor,
+		TrustProxyConfig: fiber.TrustProxyConfig{
+			Private:  true,
+			Loopback: true,
+		},
 		ErrorHandler: customErrorHandler,
 	})
+	app.Use(requestid.New())
 	app.Use(recover.New())
+	app.Use(timeout.New(func(c fiber.Ctx) error { return c.Next() }, timeout.Config{Timeout: 60 * time.Second}))
 	app.Use(middleware.SecurityHeaders(cfg.Environment == "production"))
 	configureCORS(app, cfg.CORSOrigins)
 	app.Get("/health/live", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
+	app.Use(limiter.New(limiter.Config{
+		Max:        120,
+		Expiration: time.Minute,
+		KeyGenerator: func(c fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c fiber.Ctx) error {
+			return fiber.NewError(fiber.StatusTooManyRequests, "too many requests")
+		},
+	}))
 
 	api := app.Group("/api/v1")
 
@@ -214,8 +200,21 @@ func main() {
 		listenConfig.CertFile = cfg.TLSCertFile
 		listenConfig.CertKeyFile = cfg.TLSKeyFile
 	}
-	if err := app.Listen(":"+cfg.ServerPort, listenConfig); err != nil {
-		log.Fatalf("failed to start server: %v", err)
+	errCh := make(chan error, 1)
+	go func() { errCh <- app.Listen(":"+cfg.ServerPort, listenConfig) }()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			log.Fatalf("failed to start server: %v", err)
+		}
+	case <-stop:
+		log.Println("shutting down CartRune API")
+		if err := app.Shutdown(); err != nil {
+			log.Printf("graceful shutdown failed: %v", err)
+		}
 	}
 }
 
@@ -247,35 +246,6 @@ func configureCORS(app *fiber.App, raw string) {
 		}
 		return c.Next()
 	})
-}
-
-// ensureLibraryGameKey upgrades databases created with the original
-// LibraryGame primary key (library_id only). A library can contain multiple
-// games, so the pair must be unique instead.
-func ensureLibraryGameKey(db *gorm.DB) error {
-	return db.Exec(`
-		ALTER TABLE library_games DROP CONSTRAINT IF EXISTS library_games_pkey;
-		ALTER TABLE library_games DROP CONSTRAINT IF EXISTS pk_library_games;
-		ALTER TABLE library_games ADD CONSTRAINT pk_library_games PRIMARY KEY (library_id, game_id);
-	`).Error
-}
-
-// ensureCoverReleaseKeys repairs covers imported before ReleaseID was stored.
-// Existing rows are linked to the official release for their game; new imports
-// persist the exact release selected from ScreenScraper.
-func ensureCoverReleaseKeys(db *gorm.DB) error {
-	return db.Exec(`
-		UPDATE covers AS c
-		SET release_id = (
-			SELECT r.id
-			FROM releases AS r
-			WHERE r.game_id = c.game_id
-			ORDER BY r.official DESC, r.created_at ASC, r.id ASC
-			LIMIT 1
-		)
-		WHERE (c.release_id IS NULL OR c.release_id = '00000000-0000-0000-0000-000000000000')
-		  AND EXISTS (SELECT 1 FROM releases AS r2 WHERE r2.game_id = c.game_id)
-	`).Error
 }
 
 // loadEnv loads the .env file so configuration can live in apps/api/.env.
@@ -312,6 +282,10 @@ func customErrorHandler(c fiber.Ctx, err error) error {
 	code := fiber.StatusInternalServerError
 	if e, ok := err.(*fiber.Error); ok {
 		code = e.Code
+	}
+	if code >= 500 {
+		log.Printf("request_id=%s status=%d error=%v", c.GetRespHeader("X-Request-ID"), code, err)
+		return c.Status(code).JSON(fiber.Map{"error": "internal server error"})
 	}
 	return c.Status(code).JSON(fiber.Map{
 		"error": err.Error(),

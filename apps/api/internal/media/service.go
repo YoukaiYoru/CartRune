@@ -237,11 +237,19 @@ func (s *Service) fullURL(sanitized string) string {
 	if err != nil {
 		return ""
 	}
+	if u.Scheme != "https" || !allowedRemoteHost(u.Hostname()) {
+		return ""
+	}
 	q := u.Query()
 	s.fillCreds(q)
 	q.Del("output")
 	u.RawQuery = q.Encode()
 	return u.String()
+}
+
+func allowedRemoteHost(host string) bool {
+	host = strings.ToLower(strings.TrimSpace(host))
+	return host == "api.screenscraper.fr"
 }
 
 // buildGameURL constructs a ScreenScraper media URL for a game/media key.

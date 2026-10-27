@@ -3,9 +3,9 @@
 Esta configuración crea solamente la infraestructura de CartRune:
 
 - VNet, subnet y NSG.
-- IP pública estática para `api-cartrune.duckdns.org`.
+- IP pública estática para `api.cartune.tech`.
 - VM Ubuntu 22.04 Gen2 `Standard_B2ats_v2`.
-- Disco OS `Standard_LRS` de 30 GB.
+- Disco OS `Premium_LRS` de 30 GB (se conserva el disco adoptado de la VM actual).
 - Docker y Docker Compose v2 mediante cloud-init.
 
 No crea PostgreSQL, Supabase, Qdrant, Ollama ni un registro de contenedores. La aplicación usa Supabase externo y el CD de la aplicación publica la imagen en GHCR y la actualiza por SSH.
@@ -94,3 +94,6 @@ Actualiza el registro A de DuckDNS con `public_ip_address`. Después espera a qu
 ## CI/CD de infraestructura
 
 El workflow `.github/workflows/terraform.yml` usa GitHub OIDC. Requiere una aplicación de Microsoft Entra con federated credentials para el repositorio y estos secretos: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `TFSTATE_RESOURCE_GROUP`, `TFSTATE_STORAGE_ACCOUNT`, `TF_VAR_ADMIN_SSH_PUBLIC_KEY` y `TF_VAR_ADMIN_SOURCE_CIDR`. El apply ocurre únicamente al hacer push a `master`; los pull requests sólo generan plan.
+
+El workflow guarda el plan revisado como artifact y aplica exactamente ese
+archivo en `master`; no vuelve a calcular un plan distinto durante `apply`.

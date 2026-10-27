@@ -29,6 +29,9 @@
     },
     "ios": {
       "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "CartRune uses the camera to identify video game covers."
+      },
       "bundleIdentifier": "com.cartrune.app"
     },
     "plugins": [
@@ -56,7 +59,13 @@
         }
       ],
       "expo-image",
-      "expo-video"
+      "expo-video",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "CartRune uses the camera to identify video game covers."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

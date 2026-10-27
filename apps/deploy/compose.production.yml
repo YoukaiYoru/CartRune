@@ -2,6 +2,20 @@ services:
   api:
     image: ${API_IMAGE:-ghcr.io/youkaiyoru/cartrune-api:latest}
     restart: unless-stopped
+    mem_limit: 700m
+    cpus: 1.5
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     env_file:
       - .env.api
     environment:
@@ -20,6 +34,13 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
     depends_on:
       api:
         condition: service_healthy
@@ -27,7 +48,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      CARTRUNE_DOMAIN: ${CARTRUNE_DOMAIN:-api-cartrune.duckdns.org}
+      CARTRUNE_DOMAIN: ${CARTRUNE_DOMAIN:-api.cartune.tech}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

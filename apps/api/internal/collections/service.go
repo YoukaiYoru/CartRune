@@ -3,6 +3,7 @@ package collections
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/YoukaiYoru/api/internal/models"
@@ -25,6 +26,8 @@ func (s *Service) GetUserLibraries(userID uuid.UUID) ([]models.Library, error) {
 }
 
 func (s *Service) CreateLibrary(userID uuid.UUID, req CreateLibraryRequest) (*models.Library, error) {
+	req.Name = strings.TrimSpace(req.Name)
+	req.Description = strings.TrimSpace(req.Description)
 	lib := &models.Library{
 		ID:          uuid.New(),
 		UserID:      userID,
@@ -39,8 +42,8 @@ func (s *Service) CreateLibrary(userID uuid.UUID, req CreateLibraryRequest) (*mo
 	return lib, nil
 }
 
-func (s *Service) GetLibrary(id uuid.UUID) (*models.Library, error) {
-	lib, err := s.repo.FindByID(id)
+func (s *Service) GetLibrary(id, userID uuid.UUID) (*models.Library, error) {
+	lib, err := s.repo.FindByOwnerID(id, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("library not found")
@@ -72,10 +75,10 @@ func (s *Service) UpdateLibrary(id uuid.UUID, userID uuid.UUID, req UpdateLibrar
 	}
 
 	if req.Name != "" {
-		lib.Name = req.Name
+		lib.Name = strings.TrimSpace(req.Name)
 	}
 	if req.Description != "" {
-		lib.Description = req.Description
+		lib.Description = strings.TrimSpace(req.Description)
 	}
 	if req.IsPublic != nil {
 		lib.IsPublic = *req.IsPublic

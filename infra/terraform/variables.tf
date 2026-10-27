@@ -43,7 +43,7 @@ variable "os_disk_size_gb" {
 
 variable "domain" {
   type    = string
-  default = "api-cartrune.duckdns.org"
+  default = "api.cartune.tech"
 }
 
 variable "environment" {

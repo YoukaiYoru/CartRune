@@ -12,7 +12,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_HOST": "https://api-cartrune.duckdns.org"
+        "EXPO_PUBLIC_API_HOST": "https://api.cartune.tech"
       }
     },
     "preview": {
@@ -22,7 +22,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_HOST": "https://api-cartrune.duckdns.org"
+        "EXPO_PUBLIC_API_HOST": "https://api.cartune.tech"
       }
     },
     "production": {
@@ -32,7 +32,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_HOST": "https://api-cartrune.duckdns.org"
+        "EXPO_PUBLIC_API_HOST": "https://api.cartune.tech"
       }
     }
   },
