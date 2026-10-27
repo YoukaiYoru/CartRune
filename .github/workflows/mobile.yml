@@ -1,0 +1,52 @@
+name: CartRune Mobile EAS
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Perfil de eas.json"
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+      platform:
+        description: "Plataforma a construir"
+        required: true
+        default: android
+        type: choice
+        options:
+          - android
+          - ios
+          - all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cartrune-mobile-${{ inputs.profile }}-${{ inputs.platform }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate EAS configuration
+        run: npx eas-cli@24.8.0 config --platform android --profile "${{ inputs.profile }}" --non-interactive
+      - name: Build with EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas-cli@24.8.0 build --platform "${{ inputs.platform }}" --profile "${{ inputs.profile }}" --non-interactive --wait --freeze-credentials

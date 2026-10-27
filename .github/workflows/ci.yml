@@ -1,4 +1,4 @@
-name: CI
+name: CartRune CI
 
 on:
   push:
@@ -7,33 +7,100 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: cartrune-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  validate:
+  secret-scan:
+    name: Secret scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Secret scan
+      - name: Scan tracked files
         run: bash scripts/secret-scan.sh
 
+  api:
+    name: API checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version-file: apps/api/go.mod
-      - name: Go tests
-        working-directory: apps/api
-        run: go test ./...
+          cache-dependency-path: apps/api/go.sum
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+      - name: Go vet
+        run: go vet ./...
+      - name: Go tests with race detector
+        run: go test -race ./...
 
+  mobile:
+    name: Mobile checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: apps/mobile/package-lock.json
-      - name: Mobile typecheck
-        working-directory: apps/mobile
-        run: npm ci && npm run typecheck
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Validate Expo/EAS configuration
+        run: npx eas-cli@24.8.0 config --platform android --profile preview --non-interactive
 
-      - name: Validate production compose
+  infrastructure:
+    name: Terraform checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init without backend
+        run: terraform init -backend=false -input=false
+      - name: Terraform format
+        run: terraform fmt -check -recursive
+      - name: Terraform validate
+        run: terraform validate
+
+  container:
+    name: API container build
+    needs: [api, secret-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build API image without publishing
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile
+          push: false
+          tags: cartrune-api:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          sbom: false
+
+  compose:
+    name: Production Compose validation
+    needs: [secret-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose syntax
         run: |
           touch apps/deploy/.env.api
           docker compose -f apps/deploy/compose.production.yml config
-          rm -f apps/deploy/.env.api

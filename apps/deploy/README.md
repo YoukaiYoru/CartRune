@@ -33,6 +33,11 @@ Required GitHub Environment `production` secrets:
 - `GHCR_DEPLOY_TOKEN`
 - `CARTRUNE_ENV_API` with the complete production `.env.api` content.
 
+The optional `.github/workflows/mobile.yml` workflow builds Android/iOS with
+EAS. It requires the `EXPO_TOKEN` secret in the `production` environment and
+is started manually from GitHub Actions. Select `preview` for an installable
+Android APK or `production` for the store build profile.
+
 Password recovery also requires `RESEND_API_KEY` and a verified `MAIL_FROM` in
 `CARTRUNE_ENV_API`. The reset link opens the mobile app through the
 `cartrune://reset-password` scheme.

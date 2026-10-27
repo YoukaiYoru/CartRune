@@ -1,16 +1,13 @@
-name: CartRune Terraform
+name: CartRune Terraform (manual)
 
 on:
-  pull_request:
-    paths:
-      - "infra/terraform/**"
-      - ".github/workflows/terraform.yml"
-  push:
-    branches: [master]
-    paths:
-      - "infra/terraform/**"
-      - ".github/workflows/terraform.yml"
   workflow_dispatch:
+    inputs:
+      apply:
+        description: "Aplicar la infraestructura de Azure después del plan"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -22,7 +19,9 @@ concurrency:
 
 jobs:
   plan:
+    name: Terraform plan
     runs-on: ubuntu-latest
+    environment: production
     env:
       ARM_USE_OIDC: true
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -33,6 +32,23 @@ jobs:
       TF_VAR_admin_source_cidr: ${{ secrets.TF_VAR_ADMIN_SOURCE_CIDR }}
     steps:
       - uses: actions/checkout@v4
+      - name: Check required Azure secrets
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TFSTATE_RESOURCE_GROUP: ${{ secrets.TFSTATE_RESOURCE_GROUP }}
+          TFSTATE_STORAGE_ACCOUNT: ${{ secrets.TFSTATE_STORAGE_ACCOUNT }}
+          ADMIN_SSH_PUBLIC_KEY: ${{ secrets.TF_VAR_ADMIN_SSH_PUBLIC_KEY }}
+          ADMIN_SOURCE_CIDR: ${{ secrets.TF_VAR_ADMIN_SOURCE_CIDR }}
+        run: |
+          test -n "$AZURE_CLIENT_ID"
+          test -n "$AZURE_TENANT_ID"
+          test -n "$AZURE_SUBSCRIPTION_ID"
+          test -n "$TFSTATE_RESOURCE_GROUP"
+          test -n "$TFSTATE_STORAGE_ACCOUNT"
+          test -n "$ADMIN_SSH_PUBLIC_KEY"
+          test -n "$ADMIN_SOURCE_CIDR"
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -41,7 +57,7 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
       - name: Terraform init
         working-directory: infra/terraform
-        run: terraform init -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" -backend-config="container_name=tfstate" -backend-config="key=cartrune.production.tfstate" -backend-config="use_azuread_auth=true"
+        run: terraform init -input=false -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" -backend-config="container_name=tfstate" -backend-config="key=cartrune.production.tfstate" -backend-config="use_azuread_auth=true"
       - name: Terraform format
         working-directory: infra/terraform
         run: terraform fmt -check -recursive
@@ -50,16 +66,17 @@ jobs:
         run: terraform validate
       - name: Terraform plan
         working-directory: infra/terraform
-        run: terraform plan -no-color -out=tfplan
-      - name: Upload Terraform plan
+        run: terraform plan -input=false -no-color -out=tfplan
+      - name: Upload reviewed plan
         uses: actions/upload-artifact@v4
         with:
-          name: cartrune-terraform-plan-${{ github.sha }}
+          name: cartrune-terraform-plan-${{ github.run_id }}
           path: infra/terraform/tfplan
           retention-days: 1
 
   apply:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    name: Terraform apply
+    if: inputs.apply == true
     needs: plan
     runs-on: ubuntu-latest
     environment: production
@@ -81,12 +98,12 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
       - name: Terraform init
         working-directory: infra/terraform
-        run: terraform init -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" -backend-config="container_name=tfstate" -backend-config="key=cartrune.production.tfstate" -backend-config="use_azuread_auth=true"
-      - name: Download reviewed Terraform plan
+        run: terraform init -input=false -backend-config="resource_group_name=${{ secrets.TFSTATE_RESOURCE_GROUP }}" -backend-config="storage_account_name=${{ secrets.TFSTATE_STORAGE_ACCOUNT }}" -backend-config="container_name=tfstate" -backend-config="key=cartrune.production.tfstate" -backend-config="use_azuread_auth=true"
+      - name: Download reviewed plan
         uses: actions/download-artifact@v4
         with:
-          name: cartrune-terraform-plan-${{ github.sha }}
+          name: cartrune-terraform-plan-${{ github.run_id }}
           path: infra/terraform
-      - name: Terraform apply
+      - name: Apply reviewed plan
         working-directory: infra/terraform
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -input=false -auto-approve tfplan
