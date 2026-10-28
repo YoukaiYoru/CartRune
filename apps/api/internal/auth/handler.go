@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"log"
 	"strings"
 
 	"github.com/YoukaiYoru/api/pkg/middleware"
@@ -116,6 +117,7 @@ func (h *Handler) ConfirmPasswordReset(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
 	if err := h.service.ConfirmPasswordReset(req.Token, req.Password); err != nil {
+		log.Printf("password reset confirmation failed request_id=%s reason=%v", c.GetRespHeader("X-Request-ID"), err)
 		if strings.HasPrefix(err.Error(), "password must be") {
 			return response.Error(c, fiber.StatusBadRequest, "invalid password")
 		}

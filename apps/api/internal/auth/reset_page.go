@@ -42,7 +42,7 @@ var resetPasswordPage = template.Must(template.New("reset-password").Parse(`<!do
       <input id="confirm" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
       <button id="submit" type="submit">Change password</button>
     </form>
-    <p id="message" role="status"></p>
+    <p id="message" role="status" aria-live="polite"></p>
     <p><a href="{{.DeepLink}}">Open in the CartRune app</a></p>
   </main>
   <script>
@@ -73,11 +73,16 @@ var resetPasswordPage = template.Must(template.New("reset-password").Parse(`<!do
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token, password })
         });
-        if (!response.ok) throw new Error('reset failed');
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(result.error || 'reset failed');
+        }
         form.remove();
-        message.textContent = 'Password changed. You can now sign in to CartRune.';
-      } catch (_) {
-        message.textContent = 'This link is invalid, expired, or already used.';
+        message.textContent = result.data?.message || 'Password changed. You can now sign in to CartRune.';
+      } catch (error) {
+        message.textContent = error instanceof Error && error.message === 'invalid password'
+          ? 'Password must be between 12 and 128 characters.'
+          : 'This link is invalid, expired, or already used.';
         message.className = 'error';
         submit.disabled = false;
       }
