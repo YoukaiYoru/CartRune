@@ -91,6 +91,15 @@ func main() {
 	app.Get("/health/live", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
+	// Keep the email link HTTPS so it works on every device. The page also
+	// offers a deep-link into the installed mobile app.
+	app.Get("/reset-password", func(c fiber.Ctx) error {
+		token := strings.TrimSpace(c.Query("token"))
+		if token == "" {
+			return fiber.NewError(fiber.StatusBadRequest, "missing reset token")
+		}
+		return auth.RenderResetPasswordPage(c, token)
+	})
 	app.Use(limiter.New(limiter.Config{
 		Max:        120,
 		Expiration: time.Minute,
