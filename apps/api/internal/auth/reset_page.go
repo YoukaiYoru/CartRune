@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"html/template"
 	"net/url"
+	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -92,7 +93,10 @@ func RenderResetPasswordPage(c fiber.Ctx, token string) error {
 		TokenJSON template.JS
 		DeepLink  string
 	}{
-		TokenJSON: template.JS(template.JSEscapeString(token)),
+		// strconv.Quote produces a valid JavaScript string literal. Without the
+		// quotes, the browser interprets the token as an identifier and the
+		// submit event handler never gets registered.
+		TokenJSON: template.JS(strconv.Quote(token)),
 		DeepLink:  "cartrune://reset-password?token=" + url.QueryEscape(token),
 	}
 	var body bytes.Buffer
